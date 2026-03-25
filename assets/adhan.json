@@ -1,0 +1,32 @@
+[
+    {
+        "id": "1",
+        "name": "أذان الحرم المكي (عبدالمجيد السريحي)",
+        "url": "https://www.islamcan.com/audio/adhan/azan1.mp3",
+        "fajr_url": "https://www.islamcan.com/audio/adhan/fajr/fajr-madina.mp3"
+    },
+    {
+        "id": "2",
+        "name": "أذان الحرم المدني (عصام بخاري)",
+        "url": "https://www.islamcan.com/audio/adhan/azan2.mp3",
+        "fajr_url": "https://www.islamcan.com/audio/adhan/fajr/fajr-madina.mp3"
+    },
+    {
+        "id": "3",
+        "name": "أذان المسجد الأقصى",
+        "url": "https://www.islamcan.com/audio/adhan/azan3.mp3",
+        "fajr_url": "https://www.islamcan.com/audio/adhan/fajr/azan-makkah-fajr.mp3"
+    },
+    {
+        "id": "4",
+        "name": "مشاري العفاسي",
+        "url": "https://www.islamcan.com/audio/adhan/azan4.mp3",
+        "fajr_url": "https://www.islamcan.com/audio/adhan/fajr/fajr-mishary-alafasy.mp3"
+    },
+    {
+        "id": "5",
+        "name": "ناصر القطامي",
+        "url": "https://www.islamcan.com/audio/adhan/azan5.mp3",
+        "fajr_url": "https://www.islamcan.com/audio/adhan/fajr/azan-fajr-nasser-al-qatami.mp3"
+    }
+]
