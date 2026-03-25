@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
+import 'package:yusr_app/core/services/storage_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,7 +24,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _controller.forward();
 
     Timer(const Duration(seconds: 3), () {
-      Navigator.pushReplacementNamed(context, '/intro');
+      final nextRoute = StorageService.introSeen ? '/home' : '/intro';
+      Navigator.pushReplacementNamed(context, nextRoute);
     });
   }
 

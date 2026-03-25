@@ -80,4 +80,9 @@ class StorageService {
   static Future<void> setRemindersSwipeHintSeen(bool seen) async {
     await _prefs.setBool('reminders_swipe_hint_seen', seen);
   }
+
+  static bool get introSeen => _prefs.getBool('intro_seen') ?? false;
+  static Future<void> setIntroSeen(bool seen) async {
+    await _prefs.setBool('intro_seen', seen);
+  }
 }

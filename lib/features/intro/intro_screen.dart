@@ -3,6 +3,7 @@ import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
+import 'package:yusr_app/core/services/storage_service.dart';
 
 class IntroScreen extends StatefulWidget {
   const IntroScreen({super.key});
@@ -140,8 +141,10 @@ class _IntroScreenState extends State<IntroScreen> {
                           vertical: 15,
                         ),
                       ),
-                      onPressed: () {
+                      onPressed: () async {
                         if (_currentPage == _pages.length - 1) {
+                          await StorageService.setIntroSeen(true);
+                          if (!mounted) return;
                           Navigator.pushReplacementNamed(context, '/home');
                         } else {
                           _pageController.nextPage(
