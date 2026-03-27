@@ -196,10 +196,8 @@ class _QuranQuickJumpSheetState extends State<QuranQuickJumpSheet> {
 
     await Navigator.of(widget.parentContext).push(
       MaterialPageRoute(
-        builder: (_) => QuranPageViewerScreen(
-          initialPage: page,
-          showPageTitle: false,
-        ),
+        builder: (_) =>
+            QuranPageViewerScreen(initialPage: page, showPageTitle: false),
       ),
     );
 
@@ -208,6 +206,8 @@ class _QuranQuickJumpSheetState extends State<QuranQuickJumpSheet> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

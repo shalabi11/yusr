@@ -64,7 +64,10 @@ class _QuranBookmarksSheetState extends State<QuranBookmarksSheet> {
                   final surahName = _surahNameFor(bookmark.surahNumber);
 
                   return ListTile(
-                    leading: const Icon(Icons.bookmark, color: AppColors.accent),
+                    leading: const Icon(
+                      Icons.bookmark,
+                      color: AppColors.accent,
+                    ),
                     title: Text(
                       surahName,
                       style: const TextStyle(color: AppColors.textWhite),
@@ -77,7 +80,10 @@ class _QuranBookmarksSheetState extends State<QuranBookmarksSheet> {
                     ),
                     onTap: () => _openBookmark(bookmark),
                     trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.redAccent,
+                      ),
                       onPressed: () => _deleteBookmark(bookmark),
                     ),
                   );
