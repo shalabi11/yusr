@@ -85,4 +85,32 @@ class StorageService {
   static Future<void> setIntroSeen(bool seen) async {
     await _prefs.setBool('intro_seen', seen);
   }
+
+  static bool get fastingRemindersEnabled =>
+      _prefs.getBool('fasting_reminders_enabled') ?? false;
+  static Future<void> setFastingRemindersEnabled(bool enabled) async {
+    await _prefs.setBool('fasting_reminders_enabled', enabled);
+  }
+
+  static bool get whiteDaysReminderEnabled =>
+      _prefs.getBool('white_days_reminder_enabled') ?? false;
+  static Future<void> setWhiteDaysReminderEnabled(bool enabled) async {
+    await _prefs.setBool('white_days_reminder_enabled', enabled);
+  }
+
+  static bool get mondayThursdayReminderEnabled =>
+      _prefs.getBool('monday_thursday_reminder_enabled') ?? false;
+  static Future<void> setMondayThursdayReminderEnabled(bool enabled) async {
+    await _prefs.setBool('monday_thursday_reminder_enabled', enabled);
+  }
+
+  static String? get lastWhiteDaysScheduleToken =>
+      _prefs.getString('last_white_days_schedule_token');
+  static Future<void> setLastWhiteDaysScheduleToken(String? token) async {
+    if (token == null) {
+      await _prefs.remove('last_white_days_schedule_token');
+      return;
+    }
+    await _prefs.setString('last_white_days_schedule_token', token);
+  }
 }

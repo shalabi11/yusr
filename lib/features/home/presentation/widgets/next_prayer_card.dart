@@ -24,7 +24,6 @@ class NextPrayerCardState extends State<NextPrayerCard> {
   @override
   void initState() {
     super.initState();
-    context.read<PrayerTimesCubit>().fetchPrayerTimes();
     _startTimer();
   }
 

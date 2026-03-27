@@ -4,6 +4,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:yusr_app/core/services/storage_service.dart';
+import 'package:yusr_app/core/utils/hijri_utils.dart';
+import 'package:yusr_app/features/prayer_times/data/models/prayer_time_model.dart';
 import '../../features/reminders/data/models/reminder_model.dart';
 import '../localization/app_localizations.dart';
 import '../localization/app_translations.dart';
@@ -11,6 +14,11 @@ import '../localization/app_translations.dart';
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  static const String _channelVersion = 'v2';
+  static const int _fastingMondayId = 8101;
+  static const int _fastingThursdayId = 8102;
+  static const List<int> _whiteDaysIds = [8113, 8114, 8115];
+  static const String _cachedPrayerTimesKey = 'cached_prayer_times';
 
   static const List<String> adhanSoundOptions = [
     'adhan',
@@ -55,10 +63,21 @@ class NotificationService {
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >();
-    final notificationsGranted = await androidPlugin
-        ?.requestNotificationsPermission();
-    final exactAlarmsGranted = await androidPlugin
-        ?.requestExactAlarmsPermission();
+    bool? notificationsGranted;
+    bool? exactAlarmsGranted;
+
+    try {
+      notificationsGranted = await androidPlugin
+          ?.requestNotificationsPermission();
+    } catch (e) {
+      debugPrint('Failed to request notification permission: $e');
+    }
+
+    try {
+      exactAlarmsGranted = await androidPlugin?.requestExactAlarmsPermission();
+    } catch (e) {
+      debugPrint('Failed to request exact alarm permission: $e');
+    }
 
     if (notificationsGranted == false) {
       debugPrint('Notification permission denied by user.');
@@ -170,32 +189,69 @@ class NotificationService {
     final scheduledDate = tz.TZDateTime.from(time, tz.local);
     if (scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) return;
 
+    NotificationDetails details = _prayerNotificationDetails(
+      playAdhan: playAdhan,
+      adhanSound: adhanSound,
+      allowCustomSound: true,
+    );
+
+    try {
+      await _zonedScheduleWithFallback(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: scheduledDate,
+        details: details,
+      );
+    } on PlatformException catch (e) {
+      if (e.code != 'invalid_sound') {
+        debugPrint('Prayer exact scheduling failed for $id: ${e.code}');
+        rethrow;
+      }
+
+      details = _prayerNotificationDetails(
+        playAdhan: playAdhan,
+        adhanSound: adhanSound,
+        allowCustomSound: false,
+      );
+      await _zonedScheduleWithFallback(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: scheduledDate,
+        details: details,
+      );
+    }
+  }
+
+  static Future<void> _zonedScheduleWithFallback({
+    required int id,
+    required String title,
+    required String body,
+    required tz.TZDateTime scheduledDate,
+    required NotificationDetails details,
+  }) async {
     try {
       await _notificationsPlugin.zonedSchedule(
         id: id,
         title: title,
         body: body,
         scheduledDate: scheduledDate,
-        notificationDetails: _prayerNotificationDetails(
-          playAdhan: playAdhan,
-          adhanSound: adhanSound,
-          allowCustomSound: true,
-        ),
+        notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
     } on PlatformException catch (e) {
-      if (e.code != 'invalid_sound') rethrow;
+      // On some release builds/devices exact alarms are denied; fallback keeps notifications alive.
+      debugPrint(
+        'Falling back to inexact alarm for notification $id: ${e.code}',
+      );
       await _notificationsPlugin.zonedSchedule(
         id: id,
         title: title,
         body: body,
         scheduledDate: scheduledDate,
-        notificationDetails: _prayerNotificationDetails(
-          playAdhan: playAdhan,
-          adhanSound: adhanSound,
-          allowCustomSound: false,
-        ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        notificationDetails: details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
     }
   }
@@ -238,9 +294,9 @@ class NotificationService {
     final safeSound = adhanSound.toLowerCase().replaceAll('-', '_');
     final channelId = playAdhan
         ? (allowCustomSound
-              ? 'prayer_adhan_channel_$safeSound'
-              : 'prayer_adhan_channel_default')
-        : 'prayer_normal_channel';
+              ? 'prayer_adhan_channel_${safeSound}_$_channelVersion'
+              : 'prayer_adhan_channel_default_$_channelVersion')
+        : 'prayer_normal_channel_$_channelVersion';
 
     return NotificationDetails(
       android: AndroidNotificationDetails(
@@ -268,8 +324,8 @@ class NotificationService {
   }) {
     final safeSound = adhanSound.toLowerCase().replaceAll('-', '_');
     final previewChannelId = allowCustomSound
-        ? 'prayer_preview_channel_$safeSound'
-        : 'prayer_preview_channel_default';
+        ? 'prayer_preview_channel_${safeSound}_$_channelVersion'
+        : 'prayer_preview_channel_default_$_channelVersion';
 
     return NotificationDetails(
       android: AndroidNotificationDetails(
@@ -294,29 +350,45 @@ class NotificationService {
     String title,
     String body,
   ) async {
-    const androidDetails = AndroidNotificationDetails(
-      'prayer_sticky_channel',
-      'Prayer Sticky Notification',
-      channelDescription: 'Ongoing notification for next prayer',
-      importance: Importance.low,
-      priority: Priority.low,
-      ongoing: true,
-      autoCancel: false,
-      playSound: false,
-      enableVibration: false,
-    );
-
-    const iosDetails = DarwinNotificationDetails(presentSound: false);
-
     await _notificationsPlugin.show(
       id: 0, // Sticky ID is always 0
       title: title,
       body: body,
-      notificationDetails: const NotificationDetails(
-        android: androidDetails,
-        iOS: iosDetails,
-      ),
+      notificationDetails: _persistentNotificationDetails,
     );
+  }
+
+  static Future<void> schedulePersistentNotificationUpdate({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime time,
+  }) async {
+    var scheduledDate = tz.TZDateTime.from(time, tz.local);
+    final now = tz.TZDateTime.now(tz.local);
+    if (!scheduledDate.isAfter(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+
+    try {
+      await _notificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: scheduledDate,
+        notificationDetails: _persistentNotificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+    } on PlatformException {
+      await _notificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: scheduledDate,
+        notificationDetails: _persistentNotificationDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+    }
   }
 
   static Future<void> removePersistentNotification() async {
@@ -326,6 +398,185 @@ class NotificationService {
   static Future<void> cancelNotification(int id) async {
     await _notificationsPlugin.cancel(id: id);
   }
+
+  static Future<void> syncFastingReminders({
+    PrayerTimeModel? prayerTimes,
+  }) async {
+    await _cancelFastingReminders();
+
+    if (!StorageService.fastingRemindersEnabled) {
+      await StorageService.setLastWhiteDaysScheduleToken(null);
+      return;
+    }
+
+    final TimeOfDay? ishaTime = _resolveIshaTime(prayerTimes);
+    if (ishaTime == null) {
+      debugPrint('Skipping fasting reminders sync: no available Isha time.');
+      return;
+    }
+
+    if (StorageService.mondayThursdayReminderEnabled) {
+      await scheduleWeeklyNotification(
+        id: _fastingMondayId,
+        title: 'تذكير صيام الاثنين',
+        body: 'غدًا الاثنين، لا تنسَ نية الصيام.',
+        day: DateTime.sunday,
+        time: ishaTime,
+      );
+
+      await scheduleWeeklyNotification(
+        id: _fastingThursdayId,
+        title: 'تذكير صيام الخميس',
+        body: 'غدًا الخميس، لا تنسَ نية الصيام.',
+        day: DateTime.wednesday,
+        time: ishaTime,
+      );
+    }
+
+    if (StorageService.whiteDaysReminderEnabled) {
+      await _syncWhiteDaysReminders(ishaTime);
+    } else {
+      await StorageService.setLastWhiteDaysScheduleToken(null);
+    }
+  }
+
+  static Future<void> _cancelFastingReminders() async {
+    await cancelNotification(_fastingMondayId);
+    await cancelNotification(_fastingThursdayId);
+    for (final id in _whiteDaysIds) {
+      await cancelNotification(id);
+    }
+  }
+
+  static TimeOfDay? _resolveIshaTime(PrayerTimeModel? prayerTimes) {
+    final source = prayerTimes ?? _cachedPrayerTimesModel();
+    if (source == null) return null;
+
+    final match = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(source.isha);
+    if (match == null) return null;
+
+    final hour = int.tryParse(match.group(1) ?? '');
+    final minute = int.tryParse(match.group(2) ?? '');
+    if (hour == null || minute == null) return null;
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  static PrayerTimeModel? _cachedPrayerTimesModel() {
+    final dynamic data = StorageService.getData(_cachedPrayerTimesKey);
+    if (data is! Map<String, dynamic>) return null;
+    try {
+      return PrayerTimeModel.fromJson(data);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> _syncWhiteDaysReminders(TimeOfDay ishaTime) async {
+    final now = DateTime.now();
+    final existingToken = StorageService.lastWhiteDaysScheduleToken;
+
+    final whiteDays = <DateTime>[];
+    for (int i = 0; i < 60 && whiteDays.length < 3; i++) {
+      final date = now.add(Duration(days: i));
+      final hijri = HijriUtils.fromGregorian(date);
+      if (hijri.day >= 13 && hijri.day <= 15) {
+        whiteDays.add(date);
+      }
+    }
+
+    if (whiteDays.isEmpty) {
+      await StorageService.setLastWhiteDaysScheduleToken(null);
+      return;
+    }
+
+    final token = whiteDays
+        .map((d) => '${d.year}-${d.month}-${d.day}')
+        .join('|');
+    if (token == existingToken) {
+      return;
+    }
+
+    for (int i = 0; i < whiteDays.length && i < _whiteDaysIds.length; i++) {
+      final day = whiteDays[i];
+      final triggerDate = DateTime(
+        day.year,
+        day.month,
+        day.day,
+        ishaTime.hour,
+        ishaTime.minute,
+      ).subtract(const Duration(days: 1));
+
+      await _scheduleOneOffFastingNotification(
+        id: _whiteDaysIds[i],
+        title: 'تذكير صيام الأيام البيض',
+        body: 'غدًا من الأيام البيض، لا تنسَ نية الصيام.',
+        scheduledDate: tz.TZDateTime.from(triggerDate, tz.local),
+      );
+    }
+
+    await StorageService.setLastWhiteDaysScheduleToken(token);
+  }
+
+  static Future<void> _scheduleOneOffFastingNotification({
+    required int id,
+    required String title,
+    required String body,
+    required tz.TZDateTime scheduledDate,
+  }) async {
+    final now = tz.TZDateTime.now(tz.local);
+    var candidate = scheduledDate;
+    if (!candidate.isAfter(now)) {
+      candidate = candidate.add(const Duration(days: 1));
+    }
+
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'fasting_reminders_channel_v1',
+        'Fasting Reminders',
+        channelDescription: 'Reminders for voluntary fasting days',
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+      ),
+      iOS: DarwinNotificationDetails(presentSound: true),
+    );
+
+    try {
+      await _notificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: candidate,
+        notificationDetails: details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+    } on PlatformException {
+      await _notificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: candidate,
+        notificationDetails: details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+    }
+  }
+
+  static const NotificationDetails _persistentNotificationDetails =
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'prayer_sticky_channel',
+          'Prayer Sticky Notification',
+          channelDescription: 'Ongoing notification for next prayer',
+          importance: Importance.low,
+          priority: Priority.low,
+          ongoing: true,
+          autoCancel: false,
+          playSound: false,
+          enableVibration: false,
+        ),
+        iOS: DarwinNotificationDetails(presentSound: false),
+      );
 
   static Future<void> syncReminders(List<ReminderModel> reminders) async {
     for (var r in reminders) {

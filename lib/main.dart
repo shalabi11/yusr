@@ -21,6 +21,7 @@ void main() async {
 Future<void> _syncReminderNotificationsOnStartup() async {
   final reminders = RemindersRepository().getReminders();
   await NotificationService.syncReminders(reminders);
+  await NotificationService.syncFastingReminders();
 }
 
 class IslamicApp extends StatelessWidget {
@@ -33,7 +34,8 @@ class IslamicApp extends StatelessWidget {
         BlocProvider(create: (context) => SettingsCubit()),
         BlocProvider(
           create: (context) =>
-              PrayerTimesCubit(PrayerTimesRepository())..fetchPrayerTimes(),
+              PrayerTimesCubit(PrayerTimesRepository())
+                ..fetchPrayerTimes(force: true),
         ),
       ],
       child: BlocBuilder<SettingsCubit, SettingsState>(

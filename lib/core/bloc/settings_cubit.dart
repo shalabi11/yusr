@@ -10,6 +10,9 @@ class SettingsState {
   final bool stickyNotification;
   final String adhanSound;
   final bool quranReadAsText;
+  final bool fastingRemindersEnabled;
+  final bool whiteDaysReminderEnabled;
+  final bool mondayThursdayReminderEnabled;
 
   const SettingsState({
     required this.langCode,
@@ -18,6 +21,9 @@ class SettingsState {
     required this.stickyNotification,
     required this.adhanSound,
     required this.quranReadAsText,
+    required this.fastingRemindersEnabled,
+    required this.whiteDaysReminderEnabled,
+    required this.mondayThursdayReminderEnabled,
   });
 
   SettingsState copyWith({
@@ -27,6 +33,9 @@ class SettingsState {
     bool? stickyNotification,
     String? adhanSound,
     bool? quranReadAsText,
+    bool? fastingRemindersEnabled,
+    bool? whiteDaysReminderEnabled,
+    bool? mondayThursdayReminderEnabled,
   }) {
     return SettingsState(
       langCode: langCode ?? this.langCode,
@@ -35,6 +44,12 @@ class SettingsState {
       stickyNotification: stickyNotification ?? this.stickyNotification,
       adhanSound: adhanSound ?? this.adhanSound,
       quranReadAsText: quranReadAsText ?? this.quranReadAsText,
+      fastingRemindersEnabled:
+          fastingRemindersEnabled ?? this.fastingRemindersEnabled,
+      whiteDaysReminderEnabled:
+          whiteDaysReminderEnabled ?? this.whiteDaysReminderEnabled,
+      mondayThursdayReminderEnabled:
+          mondayThursdayReminderEnabled ?? this.mondayThursdayReminderEnabled,
     );
   }
 }
@@ -49,6 +64,10 @@ class SettingsCubit extends Cubit<SettingsState> {
           stickyNotification: StorageService.stickyNotification,
           adhanSound: StorageService.adhanSound,
           quranReadAsText: StorageService.quranReadAsText,
+          fastingRemindersEnabled: StorageService.fastingRemindersEnabled,
+          whiteDaysReminderEnabled: StorageService.whiteDaysReminderEnabled,
+          mondayThursdayReminderEnabled:
+              StorageService.mondayThursdayReminderEnabled,
         ),
       ) {
     // Sync current lang on boot
@@ -94,5 +113,23 @@ class SettingsCubit extends Cubit<SettingsState> {
     if (readAsText == state.quranReadAsText) return;
     StorageService.setQuranReadAsText(readAsText);
     emit(state.copyWith(quranReadAsText: readAsText));
+  }
+
+  Future<void> setFastingRemindersEnabled(bool enabled) async {
+    if (enabled == state.fastingRemindersEnabled) return;
+    await StorageService.setFastingRemindersEnabled(enabled);
+    emit(state.copyWith(fastingRemindersEnabled: enabled));
+  }
+
+  Future<void> setWhiteDaysReminderEnabled(bool enabled) async {
+    if (enabled == state.whiteDaysReminderEnabled) return;
+    await StorageService.setWhiteDaysReminderEnabled(enabled);
+    emit(state.copyWith(whiteDaysReminderEnabled: enabled));
+  }
+
+  Future<void> setMondayThursdayReminderEnabled(bool enabled) async {
+    if (enabled == state.mondayThursdayReminderEnabled) return;
+    await StorageService.setMondayThursdayReminderEnabled(enabled);
+    emit(state.copyWith(mondayThursdayReminderEnabled: enabled));
   }
 }

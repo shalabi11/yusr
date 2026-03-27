@@ -15,22 +15,51 @@ part 'prayer_times_state.dart';
 class PrayerTimesCubit extends Cubit<PrayerTimesState> {
   final PrayerTimesRepository repository;
   Timer? _stickyTimer;
+  Future<void>? _activeFetch;
+  DateTime? _lastFetchAt;
+
+  static const Duration _minFetchInterval = Duration(minutes: 2);
+  static const List<int> _stickyRefreshIds = [2001, 2002, 2003, 2004, 2005];
 
   PrayerTimesCubit(this.repository) : super(PrayerTimesInitial()) {
     _startStickyRefreshTimer();
   }
 
-  Future<void> fetchPrayerTimes() async {
-    emit(PrayerTimesLoading());
+  Future<void> fetchPrayerTimes({bool force = false}) {
+    if (_activeFetch != null) {
+      return _activeFetch!;
+    }
+
+    final now = DateTime.now();
+    final recentFetch =
+        _lastFetchAt != null &&
+        now.difference(_lastFetchAt!) < _minFetchInterval;
+    if (!force && recentFetch && state is PrayerTimesLoaded) {
+      final current = state as PrayerTimesLoaded;
+      _updateStickyNotification(current.prayerTimes, current.locationName);
+      return Future.value();
+    }
+
+    final future = _performFetch();
+    _activeFetch = future;
+    future.whenComplete(() => _activeFetch = null);
+    return future;
+  }
+
+  Future<void> _performFetch() async {
+    if (state is! PrayerTimesLoaded) {
+      emit(PrayerTimesLoading());
+    }
     try {
       final result = await repository.getPrayerTimes();
 
       if (result != null) {
+        _lastFetchAt = DateTime.now();
         emit(
           PrayerTimesLoaded(
             result.prayerTimes,
             result.locationName,
-            DateTime.now(),
+            _lastFetchAt!,
             result.isFromCache,
           ),
         );
@@ -50,14 +79,14 @@ class PrayerTimesCubit extends Cubit<PrayerTimesState> {
   Future<bool> setManualLocation(String city) async {
     final saved = await repository.setManualLocationByCity(city);
     if (saved) {
-      await fetchPrayerTimes();
+      await fetchPrayerTimes(force: true);
     }
     return saved;
   }
 
   Future<void> useCurrentLocation() async {
     await repository.disableManualLocation();
-    await fetchPrayerTimes();
+    await fetchPrayerTimes(force: true);
   }
 
   Future<void> _syncPrayerNotifications(
@@ -96,6 +125,42 @@ class PrayerTimesCubit extends Cubit<PrayerTimesState> {
     }
 
     _updateStickyNotification(times, locationName);
+
+    await NotificationService.syncFastingReminders(prayerTimes: times);
+
+    // Keep sticky notification fresh in background by scheduling updates at prayer boundaries.
+    await _rescheduleStickyRefreshNotifications(times, locationName, now);
+  }
+
+  Future<void> _rescheduleStickyRefreshNotifications(
+    PrayerTimeModel times,
+    String locationName,
+    DateTime now,
+  ) async {
+    for (final id in _stickyRefreshIds) {
+      await NotificationService.cancelNotification(id);
+    }
+
+    if (!StorageService.stickyNotification) {
+      return;
+    }
+
+    final slots = PrayerScheduleHelper.prayerSlots(times, now);
+    for (var i = 0; i < slots.length && i < _stickyRefreshIds.length; i++) {
+      final trigger = slots[i].time;
+      final nextInfo = PrayerScheduleHelper.computeNextPrayer(
+        times,
+        reference: trigger.add(const Duration(seconds: 1)),
+      );
+      final timeStr = DateFormat('hh:mm a').format(nextInfo.slot.time);
+
+      await NotificationService.schedulePersistentNotificationUpdate(
+        id: _stickyRefreshIds[i],
+        title: 'الصلاة القادمة: ${nextInfo.slot.key.tr} ($locationName)',
+        body: 'الوقت: $timeStr',
+        time: trigger,
+      );
+    }
   }
 
   void _updateStickyNotification(PrayerTimeModel times, String locationName) {
