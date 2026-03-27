@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:yusr_app/core/widgets/app_radial_background.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/utils/time_picker_util.dart';
 import 'package:yusr_app/features/adhkar/data/models/adhkar_models.dart';
 import 'package:yusr_app/features/adhkar/data/repositories/adhkar_repository.dart';
 import 'package:yusr_app/features/reminders/data/models/reminder_model.dart';
 import 'package:yusr_app/features/reminders/data/repositories/reminders_repository.dart';
-import 'package:yusr_app/features/reminders/presentation/widgets/reminder_card.dart';
+import 'package:yusr_app/features/reminders/presentation/widgets/reminders_list_view.dart';
 import 'package:yusr_app/core/services/notification_service.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
@@ -241,64 +242,23 @@ class _RemindersScreenState extends State<RemindersScreen> {
         ),
         iconTheme: const IconThemeData(color: AppColors.textWhite),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.topLeft,
-            radius: 2.0,
-            colors: [AppColors.primaryDark, AppColors.background],
-          ),
-        ),
-        child: SafeArea(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(20),
-            itemCount: reminders.length,
-            itemBuilder: (context, index) {
-              final reminder = reminders[index];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 15),
-                child: Dismissible(
-                  key: ValueKey(reminder.id),
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(
-                      Icons.delete_outline,
-                      color: Colors.white,
-                    ),
-                  ),
-                  onDismissed: (_) => _deleteReminderBySwipe(reminder),
-                  child: ReminderCard(
-                    reminder: reminder,
-                    onChanged: (val) async {
-                      setState(() {
-                        reminder.enabled = val;
-                      });
-                      await _saveAndSyncData();
-                    },
-                    onEditTime: () {
-                      TimePickerUtil.showCupertinoTimePicker(
-                        context: context,
-                        initialTime: reminder.timeOfDay,
-                        onTimeChanged: (TimeOfDay newTime) async {
-                          setState(() {
-                            reminder.hour = newTime.hour;
-                            reminder.minute = newTime.minute;
-                          });
-                          await _saveAndSyncData();
-                        },
-                      );
-                    },
-                  ),
-                ),
-              );
-            },
-          ),
+      body: AppRadialBackground(
+        child: RemindersListView(
+          reminders: reminders,
+          onDelete: _deleteReminderBySwipe,
+          onToggle: (reminder, enabled) async {
+            setState(() {
+              reminder.enabled = enabled;
+            });
+            await _saveAndSyncData();
+          },
+          onTimeChanged: (reminder, newTime) async {
+            setState(() {
+              reminder.hour = newTime.hour;
+              reminder.minute = newTime.minute;
+            });
+            await _saveAndSyncData();
+          },
         ),
       ),
       floatingActionButton: FloatingActionButton(

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
-import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
 import 'package:yusr_app/core/services/storage_service.dart';
+import 'package:yusr_app/features/intro/presentation/widgets/intro_page_card.dart';
+import 'package:yusr_app/features/intro/presentation/widgets/intro_page_dots.dart';
 
 class IntroScreen extends StatefulWidget {
   const IntroScreen({super.key});
@@ -64,41 +65,10 @@ class _IntroScreenState extends State<IntroScreen> {
                   },
                   itemCount: _pages.length,
                   itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.all(40.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          GlassContainer(
-                            padding: const EdgeInsets.all(40),
-                            borderRadius: 100,
-                            child: Icon(
-                              _getIcon(_pages[index]['icon']!),
-                              size: 80,
-                              color: AppColors.accent,
-                            ),
-                          ),
-                          const SizedBox(height: 60),
-                          Text(
-                            _pages[index]['titleKey']!.tr,
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.accent,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            _pages[index]['descKey']!.tr,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              color: AppColors.textSecondary,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
+                    return IntroPageCard(
+                      titleKey: _pages[index]['titleKey']!,
+                      descKey: _pages[index]['descKey']!,
+                      iconName: _pages[index]['icon']!,
                     );
                   },
                 ),
@@ -111,23 +81,9 @@ class _IntroScreenState extends State<IntroScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: List.generate(_pages.length, (index) {
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          height: 8,
-                          width: _currentPage == index ? 24 : 8,
-                          decoration: BoxDecoration(
-                            color: _currentPage == index
-                                ? AppColors.accent
-                                : AppColors.textSecondary.withValues(
-                                    alpha: 0.5,
-                                  ),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        );
-                      }),
+                    IntroPageDots(
+                      pagesCount: _pages.length,
+                      currentPage: _currentPage,
                     ),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -171,18 +127,5 @@ class _IntroScreenState extends State<IntroScreen> {
         ),
       ),
     );
-  }
-
-  IconData _getIcon(String name) {
-    switch (name) {
-      case 'mosque':
-        return Icons.mosque_outlined;
-      case 'notifications':
-        return Icons.notifications_active_outlined;
-      case 'book':
-        return Icons.menu_book_outlined;
-      default:
-        return Icons.info_outline;
-    }
   }
 }
