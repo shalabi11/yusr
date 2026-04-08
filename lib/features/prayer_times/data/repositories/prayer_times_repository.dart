@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:yusr_app/core/error/failures.dart';
+import 'package:yusr_app/core/services/storage/istorage_service.dart';
 import '../../../../core/services/location_service.dart';
-import '../../../../core/services/storage_service.dart';
 import '../datasources/prayer_times_remote_datasource.dart';
 import '../models/prayer_time_model.dart';
 

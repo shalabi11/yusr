@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:yusr_app/core/services/storage/istorage_service.dart';
 import '../../data/repositories/prayer_times_repository.dart';
 import '../../data/models/prayer_time_model.dart';
 import '../../domain/prayer_schedule_helper.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/services/notification_service.dart';
-import '../../../../core/services/storage_service.dart';
 import '../../../../core/localization/app_localizations.dart';
 
 part 'prayer_times_state.dart';

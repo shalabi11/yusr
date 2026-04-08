@@ -166,7 +166,7 @@ class _QuranQuickJumpSheetState extends State<QuranQuickJumpSheet> {
     }
 
     final pages = await widget.repo.pagesForJuz(juz);
-    if (!context.mounted || pages.isEmpty) return;
+    if (!mounted || pages.isEmpty) return;
 
     Navigator.of(context).pop();
     if (!widget.parentContext.mounted) return;

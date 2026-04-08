@@ -1,6 +1,8 @@
 import 'package:get_it/get_it.dart';
 import 'package:yusr_app/core/bloc/settings_cubit.dart';
 import 'package:yusr_app/core/services/notification_service.dart';
+import 'package:yusr_app/core/services/storage/istorage_service.dart';
+import 'package:yusr_app/core/services/storage/storage_sevice_impl.dart';
 import 'package:yusr_app/core/services/storage_service.dart';
 import 'package:yusr_app/features/adhkar/data/repositories/adhkar_repository.dart';
 import 'package:yusr_app/features/home/data/daily_ayah_repository.dart';

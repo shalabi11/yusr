@@ -1,0 +1,52 @@
+abstract class IStorageService {
+  String get language;
+  Future<void> setLanguage(String langCode);
+
+  Future<void> saveData(String key, dynamic value);
+  dynamic getData(String key);
+
+  int get prayerOffset;
+  Future<void> setPrayerOffset(int offset);
+
+  bool get playAdhan;
+  Future<void> setPlayAdhan(bool play);
+
+  bool get stickyNotification;
+  Future<void> setStickyNotification(bool sticky);
+
+  String get adhanSound;
+  Future<void> setAdhanSound(String soundKey);
+
+  double? get manualLat;
+  double? get manualLng;
+  String? get manualCity;
+  bool get hasManualLocation;
+
+  Future<void> setManualLocation({
+    required double lat,
+    required double lng,
+    required String city,
+  });
+  Future<void> clearManualLocation();
+
+  bool get quranReadAsText;
+  Future<void> setQuranReadAsText(bool readAsText);
+
+  bool get remindersSwipeHintSeen;
+  Future<void> setRemindersSwipeHintSeen(bool seen);
+
+  bool get introSeen;
+  Future<void> setIntroSeen(bool seen);
+
+  bool get fastingRemindersEnabled;
+  Future<void> setFastingRemindersEnabled(bool enabled);
+
+  bool get whiteDaysReminderEnabled;
+  Future<void> setWhiteDaysReminderEnabled(bool enabled);
+
+  bool get mondayThursdayReminderEnabled;
+  Future<void> setMondayThursdayReminderEnabled(bool enabled);
+
+  String? get lastWhiteDaysScheduleToken;
+  Future<void> setLastWhiteDaysScheduleToken(String? token);
+}
