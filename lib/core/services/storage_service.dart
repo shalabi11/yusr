@@ -86,7 +86,8 @@ class StorageServiceImpl implements IStorageService {
   Future<void> setLanguage(String langCode) => _language.setLanguage(langCode);
 
   @override
-  Future<void> saveData(String key, dynamic value) => _core.saveData(key, value);
+  Future<void> saveData(String key, dynamic value) =>
+      _core.saveData(key, value);
 
   @override
   dynamic getData(String key) => _core.getData(key);
@@ -114,7 +115,8 @@ class StorageServiceImpl implements IStorageService {
   String get adhanSound => _prayer.adhanSound;
 
   @override
-  Future<void> setAdhanSound(String soundKey) => _prayer.setAdhanSound(soundKey);
+  Future<void> setAdhanSound(String soundKey) =>
+      _prayer.setAdhanSound(soundKey);
 
   @override
   double? get manualLat => _location.manualLat;
