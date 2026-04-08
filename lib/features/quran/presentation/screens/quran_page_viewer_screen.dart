@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
 import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
+import 'package:yusr_app/injection_container.dart';
 
 class QuranPageViewerScreen extends StatefulWidget {
   final int initialPage;
@@ -20,7 +21,7 @@ class QuranPageViewerScreen extends StatefulWidget {
 }
 
 class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
-  final QuranRepository _repo = QuranRepository();
+  final QuranRepository _repo = sl<QuranRepository>();
   late final PageController _controller;
   late int _currentPage;
   late final List<int> _pages;

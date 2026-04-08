@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/prayer_countdown_text.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../prayer_times/data/models/prayer_time_model.dart';
 import '../../../prayer_times/presentation/cubit/prayer_times_cubit.dart';
@@ -17,7 +18,6 @@ class NextPrayerCard extends StatefulWidget {
 
 class NextPrayerCardState extends State<NextPrayerCard> {
   Timer? _timer;
-  String _countdownStr = '--:--:--';
   String _nextPrayerName = 'جاري الحساب...';
   IconData _nextPrayerIcon = Icons.access_time;
 
@@ -49,7 +49,6 @@ class NextPrayerCardState extends State<NextPrayerCard> {
       setState(() {
         _nextPrayerName = next.slot.key.tr;
         _nextPrayerIcon = next.slot.icon;
-        _countdownStr = PrayerScheduleHelper.formatCountdown(next.remaining);
       });
     }
   }
@@ -57,6 +56,11 @@ class NextPrayerCardState extends State<NextPrayerCard> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<PrayerTimesCubit, PrayerTimesState>(
+      buildWhen: (previous, current) {
+        return current is PrayerTimesLoaded ||
+            current is PrayerTimesLoading ||
+            current is PrayerTimesError;
+      },
       builder: (context, state) {
         return GlassContainer(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -102,9 +106,8 @@ class NextPrayerCardState extends State<NextPrayerCard> {
                       ),
                     )
                   else ...[
-                    Text(
-                      _countdownStr,
-                      style: const TextStyle(
+                    const PrayerCountdownText(
+                      style: TextStyle(
                         color: AppColors.accent,
                         fontSize: 22,
                         fontWeight: FontWeight.bold,

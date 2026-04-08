@@ -4,6 +4,7 @@ import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/utils/hijri_utils.dart';
+import 'package:yusr_app/core/widgets/prayer_countdown_text.dart';
 import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/features/prayer_times/domain/prayer_schedule_helper.dart';
 import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
@@ -118,9 +119,8 @@ class PrayerTimesLoadedView extends StatelessWidget {
                     ],
                   ),
                 ),
-                Text(
-                  PrayerScheduleHelper.formatCountdown(next.remaining),
-                  style: const TextStyle(
+                const PrayerCountdownText(
+                  style: TextStyle(
                     color: AppColors.accent,
                     fontWeight: FontWeight.bold,
                     fontSize: 18,

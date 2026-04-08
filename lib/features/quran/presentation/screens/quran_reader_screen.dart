@@ -4,6 +4,7 @@ import 'package:yusr_app/core/widgets/app_radial_background.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
 import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
 import 'package:yusr_app/features/quran/presentation/widgets/quran_verse_card.dart';
+import 'package:yusr_app/injection_container.dart';
 
 class QuranReaderScreen extends StatefulWidget {
   final QuranSurah surah;
@@ -15,7 +16,7 @@ class QuranReaderScreen extends StatefulWidget {
 }
 
 class _QuranReaderScreenState extends State<QuranReaderScreen> {
-  final QuranRepository _repo = QuranRepository();
+  final QuranRepository _repo = sl<QuranRepository>();
 
   Future<void> _saveBookmark(QuranVerse verse) async {
     final data = QuranLastRead(

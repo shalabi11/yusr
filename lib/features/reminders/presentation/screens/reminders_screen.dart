@@ -11,6 +11,7 @@ import 'package:yusr_app/core/services/notification_service.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
 import 'package:yusr_app/core/services/storage_service.dart';
+import 'package:yusr_app/injection_container.dart';
 
 class RemindersScreen extends StatefulWidget {
   const RemindersScreen({super.key});
@@ -20,8 +21,8 @@ class RemindersScreen extends StatefulWidget {
 }
 
 class _RemindersScreenState extends State<RemindersScreen> {
-  final RemindersRepository _repository = RemindersRepository();
-  final AdhkarRepository _adhkarRepository = AdhkarRepository();
+  final RemindersRepository _repository = sl<RemindersRepository>();
+  final AdhkarRepository _adhkarRepository = sl<AdhkarRepository>();
   late List<ReminderModel> reminders;
 
   Future<void> _showAddReminderDialog() async {

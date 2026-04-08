@@ -14,6 +14,7 @@ import 'package:yusr_app/features/quran/presentation/widgets/quran_khatma_tab.da
 import 'package:yusr_app/features/quran/presentation/widgets/quran_pages_tab.dart';
 import 'package:yusr_app/features/quran/presentation/widgets/quran_quick_jump_sheet.dart';
 import 'package:yusr_app/features/quran/presentation/widgets/quran_surah_tab.dart';
+import 'package:yusr_app/injection_container.dart';
 
 class QuranScreen extends StatefulWidget {
   const QuranScreen({super.key});
@@ -24,7 +25,7 @@ class QuranScreen extends StatefulWidget {
 
 class _QuranScreenState extends State<QuranScreen>
     with SingleTickerProviderStateMixin {
-  final QuranRepository _repo = QuranRepository();
+  final QuranRepository _repo = sl<QuranRepository>();
   late final TabController _tabController;
   late final TextEditingController _daysController;
   late final TextEditingController _searchController;

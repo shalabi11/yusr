@@ -7,6 +7,7 @@ import 'package:yusr_app/features/adhkar/data/repositories/adhkar_repository.dar
 import 'package:yusr_app/features/adhkar/presentation/widgets/adhkar_category_card.dart';
 import 'package:yusr_app/features/reminders/data/models/reminder_model.dart';
 import 'package:yusr_app/features/reminders/data/repositories/reminders_repository.dart';
+import 'package:yusr_app/injection_container.dart';
 
 class AdhkarScreen extends StatefulWidget {
   const AdhkarScreen({super.key});
@@ -16,8 +17,8 @@ class AdhkarScreen extends StatefulWidget {
 }
 
 class _AdhkarScreenState extends State<AdhkarScreen> {
-  final AdhkarRepository _repo = AdhkarRepository();
-  final RemindersRepository _remindersRepo = RemindersRepository();
+  final AdhkarRepository _repo = sl<AdhkarRepository>();
+  final RemindersRepository _remindersRepo = sl<RemindersRepository>();
   bool _loading = true;
   List<AdhkarCategory> _categories = const [];
 

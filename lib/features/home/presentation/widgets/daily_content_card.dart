@@ -4,13 +4,28 @@ import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
 import 'package:yusr_app/features/home/data/daily_ayah_repository.dart';
+import 'package:yusr_app/injection_container.dart';
 
-class DailyContentCard extends StatelessWidget {
+class DailyContentCard extends StatefulWidget {
   const DailyContentCard({super.key});
 
   @override
+  State<DailyContentCard> createState() => _DailyContentCardState();
+}
+
+class _DailyContentCardState extends State<DailyContentCard> {
+  late final DailyAyahRepository _repo;
+  late final Future<DailyAyah> _dailyAyahFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _repo = sl<DailyAyahRepository>();
+    _dailyAyahFuture = _repo.getDailyAyah();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final repo = DailyAyahRepository();
     return GlassContainer(
       padding: const EdgeInsets.all(25),
       borderRadius: 24,
@@ -33,7 +48,7 @@ class DailyContentCard extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           FutureBuilder<DailyAyah>(
-            future: repo.getDailyAyah(),
+            future: _dailyAyahFuture,
             builder: (context, snapshot) {
               final ayah = snapshot.data;
               if (ayah == null) {
