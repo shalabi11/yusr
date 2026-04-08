@@ -14,6 +14,8 @@ part 'prayer_times_state.dart';
 
 class PrayerTimesCubit extends Cubit<PrayerTimesState> {
   final PrayerTimesRepository repository;
+  final IStorageService _storageService;
+  final INotificationService _notificationService;
   Timer? _stickyTimer;
   Future<void>? _activeFetch;
   DateTime? _lastFetchAt;
@@ -21,7 +23,11 @@ class PrayerTimesCubit extends Cubit<PrayerTimesState> {
   static const Duration _minFetchInterval = Duration(minutes: 2);
   static const List<int> _stickyRefreshIds = [2001, 2002, 2003, 2004, 2005];
 
-  PrayerTimesCubit(this.repository) : super(PrayerTimesInitial()) {
+  PrayerTimesCubit(
+    this.repository,
+    this._storageService,
+    this._notificationService,
+  ) : super(PrayerTimesInitial()) {
     _startStickyRefreshTimer();
   }
 
@@ -52,32 +58,31 @@ class PrayerTimesCubit extends Cubit<PrayerTimesState> {
     }
     try {
       final result = await repository.getPrayerTimes();
-
-      if (result != null) {
-        _lastFetchAt = DateTime.now();
-        emit(
-          PrayerTimesLoaded(
-            result.prayerTimes,
-            result.locationName,
-            _lastFetchAt!,
-            result.isFromCache,
-          ),
-        );
-        await _syncPrayerNotifications(result.prayerTimes, result.locationName);
-      } else {
-        emit(
-          const PrayerTimesError(
-            'فشل في جلب أوقات الصلاة. يرجى التحقق من اتصالك بالإنترنت وصلاحيات الموقع.',
-          ),
-        );
-      }
+      await result.fold(
+        (failure) async {
+          emit(PrayerTimesError(failure.message));
+        },
+        (data) async {
+          _lastFetchAt = DateTime.now();
+          emit(
+            PrayerTimesLoaded(
+              data.prayerTimes,
+              data.locationName,
+              _lastFetchAt!,
+              data.isFromCache,
+            ),
+          );
+          await _syncPrayerNotifications(data.prayerTimes, data.locationName);
+        },
+      );
     } catch (e) {
       emit(PrayerTimesError('حدث خطأ غير متوقع: ${e.toString()}'));
     }
   }
 
   Future<bool> setManualLocation(String city) async {
-    final saved = await repository.setManualLocationByCity(city);
+    final savedResult = await repository.setManualLocationByCity(city);
+    final saved = savedResult.fold((_) => false, (value) => value);
     if (saved) {
       await fetchPrayerTimes(force: true);
     }
@@ -93,9 +98,9 @@ class PrayerTimesCubit extends Cubit<PrayerTimesState> {
     PrayerTimeModel times,
     String locationName,
   ) async {
-    final int offset = StorageService.prayerOffset;
-    final bool playAdhan = StorageService.playAdhan;
-    final String adhanSound = StorageService.adhanSound;
+    final int offset = _storageService.prayerOffset;
+    final bool playAdhan = _storageService.playAdhan;
+    final String adhanSound = _storageService.adhanSound;
     final now = DateTime.now();
 
     final prayers = PrayerScheduleHelper.prayerSlots(times, now);
@@ -113,8 +118,8 @@ class PrayerTimesCubit extends Cubit<PrayerTimesState> {
           ? 'باقي $offset دقائق على أذان $name'
           : 'حان الآن موعد أذان $name';
 
-      await NotificationService.cancelNotification(slot.id);
-      await NotificationService.schedulePrayerNotification(
+      await _notificationService.cancelNotification(slot.id);
+      await _notificationService.schedulePrayerNotification(
         id: slot.id,
         title: 'الصلاة القادمة',
         body: body,
@@ -126,7 +131,7 @@ class PrayerTimesCubit extends Cubit<PrayerTimesState> {
 
     _updateStickyNotification(times, locationName);
 
-    await NotificationService.syncFastingReminders(prayerTimes: times);
+    await _notificationService.syncFastingReminders(prayerTimes: times);
 
     // Keep sticky notification fresh in background by scheduling updates at prayer boundaries.
     await _rescheduleStickyRefreshNotifications(times, locationName, now);
@@ -138,10 +143,10 @@ class PrayerTimesCubit extends Cubit<PrayerTimesState> {
     DateTime now,
   ) async {
     for (final id in _stickyRefreshIds) {
-      await NotificationService.cancelNotification(id);
+      await _notificationService.cancelNotification(id);
     }
 
-    if (!StorageService.stickyNotification) {
+    if (!_storageService.stickyNotification) {
       return;
     }
 
@@ -154,7 +159,7 @@ class PrayerTimesCubit extends Cubit<PrayerTimesState> {
       );
       final timeStr = DateFormat('hh:mm a').format(nextInfo.slot.time);
 
-      await NotificationService.schedulePersistentNotificationUpdate(
+      await _notificationService.schedulePersistentNotificationUpdate(
         id: _stickyRefreshIds[i],
         title: 'الصلاة القادمة: ${nextInfo.slot.key.tr} ($locationName)',
         body: 'الوقت: $timeStr',
@@ -164,8 +169,8 @@ class PrayerTimesCubit extends Cubit<PrayerTimesState> {
   }
 
   void _updateStickyNotification(PrayerTimeModel times, String locationName) {
-    if (!StorageService.stickyNotification) {
-      NotificationService.removePersistentNotification();
+    if (!_storageService.stickyNotification) {
+      _notificationService.removePersistentNotification();
       return;
     }
 
@@ -173,7 +178,7 @@ class PrayerTimesCubit extends Cubit<PrayerTimesState> {
     final timeStr = DateFormat('hh:mm a').format(next.slot.time);
     final remaining = PrayerScheduleHelper.formatHoursMinutes(next.remaining);
 
-    NotificationService.showPersistentNotification(
+    _notificationService.showPersistentNotification(
       'الصلاة القادمة: ${next.slot.key.tr} ($locationName)',
       'الوقت: $timeStr | المتبقي: $remaining',
     );

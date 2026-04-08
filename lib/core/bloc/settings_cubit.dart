@@ -55,81 +55,84 @@ class SettingsState {
 }
 
 class SettingsCubit extends Cubit<SettingsState> {
-  SettingsCubit()
+  SettingsCubit(this._storageService, this._notificationService)
     : super(
         SettingsState(
-          langCode: StorageService.language,
-          prayerOffset: StorageService.prayerOffset,
-          playAdhan: StorageService.playAdhan,
-          stickyNotification: StorageService.stickyNotification,
-          adhanSound: StorageService.adhanSound,
-          quranReadAsText: StorageService.quranReadAsText,
-          fastingRemindersEnabled: StorageService.fastingRemindersEnabled,
-          whiteDaysReminderEnabled: StorageService.whiteDaysReminderEnabled,
+          langCode: _storageService.language,
+          prayerOffset: _storageService.prayerOffset,
+          playAdhan: _storageService.playAdhan,
+          stickyNotification: _storageService.stickyNotification,
+          adhanSound: _storageService.adhanSound,
+          quranReadAsText: _storageService.quranReadAsText,
+          fastingRemindersEnabled: _storageService.fastingRemindersEnabled,
+          whiteDaysReminderEnabled: _storageService.whiteDaysReminderEnabled,
           mondayThursdayReminderEnabled:
-              StorageService.mondayThursdayReminderEnabled,
+              _storageService.mondayThursdayReminderEnabled,
         ),
       ) {
     // Sync current lang on boot
     AppLocalizations.currentLang = state.langCode;
   }
 
+  final IStorageService _storageService;
+  final INotificationService _notificationService;
+
   void changeLanguage(String code) {
     if (code == state.langCode) return;
-    StorageService.setLanguage(code);
+    _storageService.setLanguage(code);
     AppLocalizations.currentLang = code;
     emit(state.copyWith(langCode: code));
   }
 
   void setPrayerOffset(int offset) {
     if (offset == state.prayerOffset) return;
-    StorageService.setPrayerOffset(offset);
+    _storageService.setPrayerOffset(offset);
     emit(state.copyWith(prayerOffset: offset));
   }
 
   void setPlayAdhan(bool play) {
     if (play == state.playAdhan) return;
-    StorageService.setPlayAdhan(play);
+    _storageService.setPlayAdhan(play);
     emit(state.copyWith(playAdhan: play));
   }
 
   void setStickyNotification(bool sticky) {
     if (sticky == state.stickyNotification) return;
-    StorageService.setStickyNotification(sticky);
+    _storageService.setStickyNotification(sticky);
     emit(state.copyWith(stickyNotification: sticky));
 
     if (!sticky) {
-      NotificationService.removePersistentNotification();
+      _notificationService.removePersistentNotification();
     }
   }
 
   void setAdhanSound(String soundKey) {
     if (soundKey == state.adhanSound) return;
-    StorageService.setAdhanSound(soundKey);
+    _storageService.setAdhanSound(soundKey);
     emit(state.copyWith(adhanSound: soundKey));
   }
 
   void setQuranReadAsText(bool readAsText) {
     if (readAsText == state.quranReadAsText) return;
-    StorageService.setQuranReadAsText(readAsText);
+    _storageService.setQuranReadAsText(readAsText);
     emit(state.copyWith(quranReadAsText: readAsText));
   }
 
   Future<void> setFastingRemindersEnabled(bool enabled) async {
     if (enabled == state.fastingRemindersEnabled) return;
-    await StorageService.setFastingRemindersEnabled(enabled);
+    await _storageService.setFastingRemindersEnabled(enabled);
     emit(state.copyWith(fastingRemindersEnabled: enabled));
   }
 
   Future<void> setWhiteDaysReminderEnabled(bool enabled) async {
     if (enabled == state.whiteDaysReminderEnabled) return;
-    await StorageService.setWhiteDaysReminderEnabled(enabled);
+    await _storageService.setWhiteDaysReminderEnabled(enabled);
     emit(state.copyWith(whiteDaysReminderEnabled: enabled));
   }
 
   Future<void> setMondayThursdayReminderEnabled(bool enabled) async {
     if (enabled == state.mondayThursdayReminderEnabled) return;
-    await StorageService.setMondayThursdayReminderEnabled(enabled);
+    await _storageService.setMondayThursdayReminderEnabled(enabled);
     emit(state.copyWith(mondayThursdayReminderEnabled: enabled));
   }
 }

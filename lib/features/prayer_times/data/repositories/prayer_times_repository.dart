@@ -1,3 +1,5 @@
+import 'package:dartz/dartz.dart';
+import 'package:yusr_app/core/error/failures.dart';
 import '../../../../core/services/location_service.dart';
 import '../../../../core/services/storage_service.dart';
 import '../datasources/prayer_times_remote_datasource.dart';
@@ -16,92 +18,121 @@ class PrayerTimesFetchResult {
 }
 
 class PrayerTimesRepository {
-  final PrayerTimesRemoteDataSource _remoteDataSource =
-      PrayerTimesRemoteDataSource();
+  final PrayerTimesRemoteDataSource _remoteDataSource;
+  final IStorageService _storageService;
   static const String _prayerTimesKey = 'cached_prayer_times';
   static const String _locationNameKey = 'cached_location_name';
   static const String _manualLocationEnabledKey = 'manual_location_enabled';
 
-  Future<bool> setManualLocationByCity(String city) async {
-    final coords = await LocationService.geocodeCityName(city);
-    if (coords == null) return false;
+  PrayerTimesRepository({
+    PrayerTimesRemoteDataSource? remoteDataSource,
+    required IStorageService storageService,
+  }) : _remoteDataSource = remoteDataSource ?? PrayerTimesRemoteDataSource(),
+       _storageService = storageService;
 
-    await StorageService.setManualLocation(
-      lat: coords.latitude,
-      lng: coords.longitude,
-      city: city,
-    );
-    await StorageService.saveData(_manualLocationEnabledKey, true);
-    return true;
+  Future<Either<Failure, bool>> setManualLocationByCity(String city) async {
+    try {
+      final coords = await LocationService.geocodeCityName(city);
+      if (coords == null) {
+        return const Left(LocationFailure('تعذر العثور على المدينة المطلوبة'));
+      }
+
+      await _storageService.setManualLocation(
+        lat: coords.latitude,
+        lng: coords.longitude,
+        city: city,
+      );
+      await _storageService.saveData(_manualLocationEnabledKey, true);
+      return const Right(true);
+    } catch (_) {
+      return const Left(LocationFailure());
+    }
   }
 
-  Future<void> disableManualLocation() async {
-    await StorageService.saveData(_manualLocationEnabledKey, false);
+  Future<Either<Failure, Unit>> disableManualLocation() async {
+    try {
+      await _storageService.saveData(_manualLocationEnabledKey, false);
+      return const Right(unit);
+    } catch (_) {
+      return const Left(CacheFailure());
+    }
   }
 
   bool get isManualLocationEnabled {
-    final enabled = StorageService.getData(_manualLocationEnabledKey);
+    final enabled = _storageService.getData(_manualLocationEnabledKey);
     return enabled == true;
   }
 
-  Future<PrayerTimesFetchResult?> getPrayerTimes() async {
+  Future<Either<Failure, PrayerTimesFetchResult>> getPrayerTimes() async {
     double? lat;
     double? lng;
     String locationName = getCachedLocationName();
 
-    if (isManualLocationEnabled && StorageService.hasManualLocation) {
-      lat = StorageService.manualLat;
-      lng = StorageService.manualLng;
-      locationName = StorageService.manualCity ?? locationName;
-    } else {
-      final position = await LocationService.getCurrentLocation();
-      if (position != null) {
-        lat = position.latitude;
-        lng = position.longitude;
+    try {
+      if (isManualLocationEnabled && _storageService.hasManualLocation) {
+        lat = _storageService.manualLat;
+        lng = _storageService.manualLng;
+        locationName = _storageService.manualCity ?? locationName;
+      } else {
+        final position = await LocationService.getCurrentLocation();
+        if (position != null) {
+          lat = position.latitude;
+          lng = position.longitude;
 
-        final placemark = await LocationService.getCityName(position);
-        if (placemark != null) {
-          locationName =
-              placemark.locality ??
-              placemark.subAdministrativeArea ??
-              'Unknown Location';
+          final placemark = await LocationService.getCityName(position);
+          if (placemark != null) {
+            locationName =
+                placemark.locality ??
+                placemark.subAdministrativeArea ??
+                'Unknown Location';
+          }
         }
       }
-    }
 
-    if (lat != null && lng != null) {
-      final remoteData = await _remoteDataSource.getPrayerTimesByCoordinates(
-        lat,
-        lng,
-      );
+      if (lat != null && lng != null) {
+        final remoteData = await _remoteDataSource.getPrayerTimesByCoordinates(
+          lat,
+          lng,
+        );
 
-      if (remoteData != null) {
-        await StorageService.saveData(_prayerTimesKey, remoteData.toJson());
-        await StorageService.saveData(_locationNameKey, locationName);
-        return PrayerTimesFetchResult(
-          prayerTimes: remoteData,
-          locationName: locationName,
-          isFromCache: false,
+        if (remoteData != null) {
+          await _storageService.saveData(_prayerTimesKey, remoteData.toJson());
+          await _storageService.saveData(_locationNameKey, locationName);
+          return Right(
+            PrayerTimesFetchResult(
+              prayerTimes: remoteData,
+              locationName: locationName,
+              isFromCache: false,
+            ),
+          );
+        }
+      }
+
+      final cachedData = _storageService.getData(_prayerTimesKey);
+      if (cachedData != null) {
+        return Right(
+          PrayerTimesFetchResult(
+            prayerTimes: PrayerTimeModel.fromJson(
+              cachedData as Map<String, dynamic>,
+            ),
+            locationName: locationName,
+            isFromCache: true,
+          ),
         );
       }
-    }
 
-    final cachedData = StorageService.getData(_prayerTimesKey);
-    if (cachedData != null) {
-      return PrayerTimesFetchResult(
-        prayerTimes: PrayerTimeModel.fromJson(
-          cachedData as Map<String, dynamic>,
+      return const Left(
+        ServerFailure(
+          'فشل في جلب أوقات الصلاة. يرجى التحقق من الاتصال وصلاحيات الموقع',
         ),
-        locationName: locationName,
-        isFromCache: true,
       );
+    } catch (_) {
+      return const Left(ServerFailure());
     }
-
-    return null;
   }
 
   String getCachedLocationName() {
-    final name = StorageService.getData(_locationNameKey);
+    final name = _storageService.getData(_locationNameKey);
     return name?.toString() ?? 'موقع غير معروف';
   }
 }
