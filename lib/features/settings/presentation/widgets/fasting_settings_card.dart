@@ -6,16 +6,36 @@ import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/features/prayer_times/data/models/prayer_time_model.dart';
 import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
+import 'fasting_settings_rows.dart';
 
 class FastingSettingsCard extends StatelessWidget {
   const FastingSettingsCard({required this.state, super.key});
 
   final SettingsState state;
 
+  Future<void> _syncAfterUpdate(BuildContext context) async =>
+      NotificationService.syncFastingReminders(
+        prayerTimes: _currentPrayerTimes(context),
+      );
+
+  Future<void> _updateMainEnabled(BuildContext context, bool val) async {
+    await context.read<SettingsCubit>().setFastingRemindersEnabled(val);
+    await _syncAfterUpdate(context);
+  }
+
+  Future<void> _updateWhiteDays(BuildContext context, bool val) async {
+    await context.read<SettingsCubit>().setWhiteDaysReminderEnabled(val);
+    await _syncAfterUpdate(context);
+  }
+
+  Future<void> _updateMondayThursday(BuildContext context, bool val) async {
+    await context.read<SettingsCubit>().setMondayThursdayReminderEnabled(val);
+    await _syncAfterUpdate(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isArabic = state.langCode == 'ar';
-
     return GlassContainer(
       padding: const EdgeInsets.all(20),
       borderRadius: 20,
@@ -37,29 +57,10 @@ class FastingSettingsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                isArabic ? 'تفعيل تنبيهات الصيام' : 'Enable fasting alerts',
-                style: const TextStyle(
-                  color: AppColors.textWhite,
-                  fontSize: 16,
-                ),
-              ),
-              Switch(
-                value: state.fastingRemindersEnabled,
-                activeThumbColor: AppColors.accent,
-                onChanged: (val) async {
-                  final settingsCubit = context.read<SettingsCubit>();
-                  final prayerTimes = _currentPrayerTimes(context);
-                  await settingsCubit.setFastingRemindersEnabled(val);
-                  await NotificationService.syncFastingReminders(
-                    prayerTimes: prayerTimes,
-                  );
-                },
-              ),
-            ],
+          FastingSwitchRow(
+            label: isArabic ? 'تفعيل تنبيهات الصيام' : 'Enable fasting alerts',
+            value: state.fastingRemindersEnabled,
+            onChanged: (val) => _updateMainEnabled(context, val),
           ),
           const SizedBox(height: 10),
           Opacity(
@@ -68,58 +69,18 @@ class FastingSettingsCard extends StatelessWidget {
               ignoring: !state.fastingRemindersEnabled,
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        isArabic
-                            ? 'الأيام البيض (13-14-15)'
-                            : 'White days (13-14-15 Hijri)',
-                        style: const TextStyle(
-                          color: AppColors.textWhite,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Switch(
-                        value: state.whiteDaysReminderEnabled,
-                        activeThumbColor: AppColors.accent,
-                        onChanged: (val) async {
-                          final settingsCubit = context.read<SettingsCubit>();
-                          final prayerTimes = _currentPrayerTimes(context);
-                          await settingsCubit.setWhiteDaysReminderEnabled(val);
-                          await NotificationService.syncFastingReminders(
-                            prayerTimes: prayerTimes,
-                          );
-                        },
-                      ),
-                    ],
+                  FastingSwitchRow(
+                    label: isArabic
+                        ? 'الأيام البيض (13-14-15)'
+                        : 'White days (13-14-15 Hijri)',
+                    value: state.whiteDaysReminderEnabled,
+                    onChanged: (val) => _updateWhiteDays(context, val),
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        isArabic ? 'الاثنين والخميس' : 'Monday & Thursday',
-                        style: const TextStyle(
-                          color: AppColors.textWhite,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Switch(
-                        value: state.mondayThursdayReminderEnabled,
-                        activeThumbColor: AppColors.accent,
-                        onChanged: (val) async {
-                          final settingsCubit = context.read<SettingsCubit>();
-                          final prayerTimes = _currentPrayerTimes(context);
-                          await settingsCubit.setMondayThursdayReminderEnabled(
-                            val,
-                          );
-                          await NotificationService.syncFastingReminders(
-                            prayerTimes: prayerTimes,
-                          );
-                        },
-                      ),
-                    ],
+                  FastingSwitchRow(
+                    label: isArabic ? 'الاثنين والخميس' : 'Monday & Thursday',
+                    value: state.mondayThursdayReminderEnabled,
+                    onChanged: (val) => _updateMondayThursday(context, val),
                   ),
                 ],
               ),
@@ -142,9 +103,6 @@ class FastingSettingsCard extends StatelessWidget {
 
   PrayerTimeModel? _currentPrayerTimes(BuildContext context) {
     final prayerState = context.read<PrayerTimesCubit>().state;
-    if (prayerState is PrayerTimesLoaded) {
-      return prayerState.prayerTimes;
-    }
-    return null;
+    return prayerState is PrayerTimesLoaded ? prayerState.prayerTimes : null;
   }
 }

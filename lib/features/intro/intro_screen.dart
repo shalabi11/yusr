@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
-import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
 import 'package:yusr_app/core/services/storage_service.dart';
+import 'package:yusr_app/features/intro/presentation/widgets/intro_footer.dart';
 import 'package:yusr_app/features/intro/presentation/widgets/intro_page_card.dart';
-import 'package:yusr_app/features/intro/presentation/widgets/intro_page_dots.dart';
 
 class IntroScreen extends StatefulWidget {
   const IntroScreen({super.key});
@@ -41,6 +40,19 @@ class _IntroScreenState extends State<IntroScreen> {
     super.dispose();
   }
 
+  Future<void> _continue() async {
+    if (_currentPage == _pages.length - 1) {
+      await StorageService.setIntroSeen(true);
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/home');
+      return;
+    }
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeIn,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,11 +70,8 @@ class _IntroScreenState extends State<IntroScreen> {
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentPage = index;
-                    });
-                  },
+                  onPageChanged: (index) =>
+                      setState(() => _currentPage = index),
                   itemCount: _pages.length,
                   itemBuilder: (context, index) {
                     return IntroPageCard(
@@ -73,54 +82,10 @@ class _IntroScreenState extends State<IntroScreen> {
                   },
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 40,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IntroPageDots(
-                      pagesCount: _pages.length,
-                      currentPage: _currentPage,
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        foregroundColor: AppColors.primaryDark,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 30,
-                          vertical: 15,
-                        ),
-                      ),
-                      onPressed: () async {
-                        if (_currentPage == _pages.length - 1) {
-                          await StorageService.setIntroSeen(true);
-                          if (!mounted) return;
-                          Navigator.pushReplacementNamed(context, '/home');
-                        } else {
-                          _pageController.nextPage(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeIn,
-                          );
-                        }
-                      },
-                      child: Text(
-                        _currentPage == _pages.length - 1
-                            ? AppStrings.startNow.tr
-                            : AppStrings.next.tr,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              IntroFooter(
+                pagesCount: _pages.length,
+                currentPage: _currentPage,
+                onPressed: _continue,
               ),
             ],
           ),

@@ -5,6 +5,8 @@ import '../../../../core/services/location_service.dart';
 import '../datasources/prayer_times_remote_datasource.dart';
 import '../models/prayer_time_model.dart';
 
+part 'prayer_times_repository_helpers.dart';
+
 class PrayerTimesFetchResult {
   final PrayerTimeModel prayerTimes;
   final String locationName;
@@ -64,62 +66,17 @@ class PrayerTimesRepository {
   }
 
   Future<Either<Failure, PrayerTimesFetchResult>> getPrayerTimes() async {
-    double? lat;
-    double? lng;
-    String locationName = getCachedLocationName();
-
     try {
-      if (isManualLocationEnabled && _storageService.hasManualLocation) {
-        lat = _storageService.manualLat;
-        lng = _storageService.manualLng;
-        locationName = _storageService.manualCity ?? locationName;
-      } else {
-        final position = await LocationService.getCurrentLocation();
-        if (position != null) {
-          lat = position.latitude;
-          lng = position.longitude;
+      final resolved = await resolveLocationCoordinates();
+      final remote = await tryFetchRemote(
+        lat: resolved.$1,
+        lng: resolved.$2,
+        locationName: resolved.$3,
+      );
+      if (remote != null) return remote;
 
-          final placemark = await LocationService.getCityName(position);
-          if (placemark != null) {
-            locationName =
-                placemark.locality ??
-                placemark.subAdministrativeArea ??
-                'Unknown Location';
-          }
-        }
-      }
-
-      if (lat != null && lng != null) {
-        final remoteData = await _remoteDataSource.getPrayerTimesByCoordinates(
-          lat,
-          lng,
-        );
-
-        if (remoteData != null) {
-          await _storageService.saveData(_prayerTimesKey, remoteData.toJson());
-          await _storageService.saveData(_locationNameKey, locationName);
-          return Right(
-            PrayerTimesFetchResult(
-              prayerTimes: remoteData,
-              locationName: locationName,
-              isFromCache: false,
-            ),
-          );
-        }
-      }
-
-      final cachedData = _storageService.getData(_prayerTimesKey);
-      if (cachedData != null) {
-        return Right(
-          PrayerTimesFetchResult(
-            prayerTimes: PrayerTimeModel.fromJson(
-              cachedData as Map<String, dynamic>,
-            ),
-            locationName: locationName,
-            isFromCache: true,
-          ),
-        );
-      }
+      final cached = buildCachedResult(resolved.$3);
+      if (cached != null) return cached;
 
       return const Left(
         ServerFailure(

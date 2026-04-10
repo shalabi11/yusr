@@ -8,7 +8,6 @@ class ReminderCard extends StatelessWidget {
   final ReminderModel reminder;
   final ValueChanged<bool> onChanged;
   final VoidCallback onEditTime;
-
   const ReminderCard({
     super.key,
     required this.reminder,
@@ -18,8 +17,7 @@ class ReminderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Dynamic system locale formatting of TimeOfDay correctly AM/PM based!
-    final String displayTime = MaterialLocalizations.of(
+    final displayTime = MaterialLocalizations.of(
       context,
     ).formatTimeOfDay(reminder.timeOfDay);
 
@@ -54,7 +52,7 @@ class ReminderCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    reminder.titleKey.tr, // Auto translate Title!
+                    reminder.titleKey.tr,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -67,7 +65,7 @@ class ReminderCard extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        '${reminder.subtitleKey.tr} • $displayTime', // Safe automatic String formatting
+                        '${reminder.subtitleKey.tr} • $displayTime',
                         style: TextStyle(
                           color: AppColors.textSecondary.withValues(
                             alpha: reminder.enabled ? 1.0 : 0.5,

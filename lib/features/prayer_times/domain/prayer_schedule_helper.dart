@@ -1,35 +1,14 @@
 import 'package:flutter/material.dart';
 import '../data/models/prayer_time_model.dart';
-
-class PrayerSlot {
-  final int id;
-  final String key;
-  final DateTime time;
-  final IconData icon;
-
-  const PrayerSlot({
-    required this.id,
-    required this.key,
-    required this.time,
-    required this.icon,
-  });
-}
-
-class NextPrayerInfo {
-  final PrayerSlot slot;
-  final Duration remaining;
-
-  const NextPrayerInfo({required this.slot, required this.remaining});
-}
+import 'prayer_schedule_format.dart';
+import 'prayer_schedule_models.dart';
 
 class PrayerScheduleHelper {
   static final RegExp _timePattern = RegExp(r'(\d{1,2}):(\d{2})');
 
   static DateTime parseApiTime(String timeStr, DateTime now) {
     final match = _timePattern.firstMatch(timeStr);
-    if (match == null) {
-      return now;
-    }
+    if (match == null) return now;
 
     final hour = int.tryParse(match.group(1) ?? '0') ?? 0;
     final minute = int.tryParse(match.group(2) ?? '0') ?? 0;
@@ -77,7 +56,6 @@ class PrayerScheduleHelper {
   }) {
     final now = reference ?? DateTime.now();
     final slots = prayerSlots(times, now);
-
     PrayerSlot? nextSlot;
     DateTime? nextTime;
 
@@ -115,19 +93,8 @@ class PrayerScheduleHelper {
     return candidate;
   }
 
-  static String formatCountdown(Duration remaining) {
-    final safe = remaining.isNegative ? Duration.zero : remaining;
-    final hours = safe.inHours.toString().padLeft(2, '0');
-    final minutes = (safe.inMinutes % 60).toString().padLeft(2, '0');
-    final seconds = (safe.inSeconds % 60).toString().padLeft(2, '0');
-    return '$hours:$minutes:$seconds';
-  }
-
-  static String formatHoursMinutes(Duration remaining) {
-    final safe = remaining.isNegative ? Duration.zero : remaining;
-    final totalMinutes = safe.inMinutes;
-    final hours = (totalMinutes ~/ 60).toString().padLeft(2, '0');
-    final minutes = (totalMinutes % 60).toString().padLeft(2, '0');
-    return '$hours:$minutes';
-  }
+  static String formatCountdown(Duration remaining) =>
+      formatPrayerCountdown(remaining);
+  static String formatHoursMinutes(Duration remaining) =>
+      formatPrayerHoursMinutes(remaining);
 }

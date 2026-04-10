@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/prayer_countdown_text.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../prayer_times/data/models/prayer_time_model.dart';
 import '../../../prayer_times/presentation/cubit/prayer_times_cubit.dart';
 import '../../../prayer_times/domain/prayer_schedule_helper.dart';
-import '../../../../core/localization/app_localizations.dart';
+import 'next_prayer_card_sections.dart';
 
 class NextPrayerCard extends StatefulWidget {
   const NextPrayerCard({super.key});
@@ -44,13 +43,11 @@ class NextPrayerCardState extends State<NextPrayerCard> {
 
   void _updateNextPrayerDisplay(PrayerTimeModel times) {
     final next = PrayerScheduleHelper.computeNextPrayer(times);
-
-    if (mounted) {
-      setState(() {
-        _nextPrayerName = next.slot.key.tr;
-        _nextPrayerIcon = next.slot.icon;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _nextPrayerName = next.slot.key.tr;
+      _nextPrayerIcon = next.slot.icon;
+    });
   }
 
   @override
@@ -67,64 +64,11 @@ class NextPrayerCardState extends State<NextPrayerCard> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(_nextPrayerIcon, color: AppColors.accent, size: 35),
-                  const SizedBox(width: 15),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'الصلاة القادمة'.tr,
-                        style: TextStyle(
-                          color: AppColors.textWhite.withValues(alpha: 0.7),
-                          fontSize: 12,
-                        ),
-                      ),
-                      Text(
-                        _nextPrayerName,
-                        style: const TextStyle(
-                          color: AppColors.textWhite,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              NextPrayerLeftSection(
+                icon: _nextPrayerIcon,
+                name: _nextPrayerName,
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (state is PrayerTimesLoading)
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: AppColors.accent,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  else ...[
-                    const PrayerCountdownText(
-                      style: TextStyle(
-                        color: AppColors.accent,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                    if (state is PrayerTimesLoaded)
-                      Text(
-                        state.locationName,
-                        style: TextStyle(
-                          color: AppColors.textWhite.withValues(alpha: 0.5),
-                          fontSize: 10,
-                        ),
-                      ),
-                  ],
-                ],
-              ),
+              NextPrayerRightSection(state: state),
             ],
           ),
         );

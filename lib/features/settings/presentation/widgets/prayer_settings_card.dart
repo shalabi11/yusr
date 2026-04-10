@@ -7,6 +7,7 @@ import 'package:yusr_app/core/services/notification_service.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
+import 'prayer_settings_card_sections.dart';
 
 class PrayerSettingsCard extends StatelessWidget {
   const PrayerSettingsCard({required this.state, super.key});
@@ -16,6 +17,8 @@ class PrayerSettingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isArabic = state.langCode == 'ar';
+    final settings = context.read<SettingsCubit>();
+    final prayerCubit = context.read<PrayerTimesCubit>();
     return GlassContainer(
       padding: const EdgeInsets.all(20),
       borderRadius: 20,
@@ -37,92 +40,44 @@ class PrayerSettingsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                isArabic ? 'صوت الأذان كامل' : 'Full Adhan Sound',
-                style: const TextStyle(
-                  color: AppColors.textWhite,
-                  fontSize: 16,
-                ),
-              ),
-              Switch(
-                value: state.playAdhan,
-                activeThumbColor: AppColors.accent,
-                onChanged: (val) {
-                  context.read<SettingsCubit>().setPlayAdhan(val);
-                  context.read<PrayerTimesCubit>().fetchPrayerTimes(
-                    force: true,
-                  );
-                },
-              ),
-            ],
+          SettingsSwitchRow(
+            label: isArabic ? 'صوت الأذان كامل' : 'Full Adhan Sound',
+            value: state.playAdhan,
+            onChanged: (val) {
+              settings.setPlayAdhan(val);
+              prayerCubit.fetchPrayerTimes(force: true);
+            },
           ),
           const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                AppStrings.quranReadAsText.tr,
-                style: const TextStyle(
-                  color: AppColors.textWhite,
-                  fontSize: 16,
-                ),
-              ),
-              Switch(
-                value: state.quranReadAsText,
-                activeThumbColor: AppColors.accent,
-                onChanged: (val) {
-                  context.read<SettingsCubit>().setQuranReadAsText(val);
-                },
-              ),
-            ],
+          SettingsSwitchRow(
+            label: AppStrings.quranReadAsText.tr,
+            value: state.quranReadAsText,
+            onChanged: settings.setQuranReadAsText,
           ),
           const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                AppStrings.adhanSound.tr,
-                style: const TextStyle(
-                  color: AppColors.textWhite,
-                  fontSize: 16,
-                ),
-              ),
-              DropdownButton<String>(
-                value: state.adhanSound,
-                dropdownColor: AppColors.primaryDark,
-                style: const TextStyle(
-                  color: AppColors.accent,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-                underline: const SizedBox(),
-                items: NotificationService.adhanSoundOptions.map((String val) {
-                  return DropdownMenuItem<String>(value: val, child: Text(val));
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) {
-                    context.read<SettingsCubit>().setAdhanSound(val);
-                    context.read<PrayerTimesCubit>().fetchPrayerTimes(
-                      force: true,
-                    );
-                  }
-                },
-              ),
-            ],
+          SettingsDropdownRow<String>(
+            label: AppStrings.adhanSound.tr,
+            value: state.adhanSound,
+            items: NotificationService.adhanSoundOptions
+                .map(
+                  (val) =>
+                      DropdownMenuItem<String>(value: val, child: Text(val)),
+                )
+                .toList(),
+            onChanged: (val) {
+              if (val == null) return;
+              settings.setAdhanSound(val);
+              prayerCubit.fetchPrayerTimes(force: true);
+            },
           ),
           const SizedBox(height: 10),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton.icon(
-              onPressed: () {
-                NotificationService.previewAdhanSound(
-                  adhanSound: state.adhanSound,
-                  playAdhan: state.playAdhan,
-                );
-              },
+              onPressed: () => NotificationService.previewAdhanSound(
+                adhanSound: state.adhanSound,
+                playAdhan: state.playAdhan,
+              ),
               icon: const Icon(Icons.play_arrow, color: AppColors.accent),
               label: Text(
                 AppStrings.previewSound.tr,
@@ -131,66 +86,35 @@ class PrayerSettingsCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 5),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                isArabic ? 'تثبيت في لوحة الإشعارات' : 'Pin in Notifications',
-                style: const TextStyle(
-                  color: AppColors.textWhite,
-                  fontSize: 16,
-                ),
-              ),
-              Switch(
-                value: state.stickyNotification,
-                activeThumbColor: AppColors.accent,
-                onChanged: (val) {
-                  context.read<SettingsCubit>().setStickyNotification(val);
-                  context.read<PrayerTimesCubit>().fetchPrayerTimes(
-                    force: true,
-                  );
-                },
-              ),
-            ],
+          SettingsSwitchRow(
+            label: isArabic
+                ? 'تثبيت في لوحة الإشعارات'
+                : 'Pin in Notifications',
+            value: state.stickyNotification,
+            onChanged: (val) {
+              settings.setStickyNotification(val);
+              prayerCubit.fetchPrayerTimes(force: true);
+            },
           ),
           const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                isArabic ? 'التنبيه قبل (دقائق)' : 'Alert Before (Mins)',
-                style: const TextStyle(
-                  color: AppColors.textWhite,
-                  fontSize: 16,
-                ),
-              ),
-              DropdownButton<int>(
-                value: state.prayerOffset,
-                dropdownColor: AppColors.primaryDark,
-                style: const TextStyle(
-                  color: AppColors.accent,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-                underline: const SizedBox(),
-                items: [0, 5, 10, 15].map((int val) {
-                  return DropdownMenuItem<int>(
+          SettingsDropdownRow<int>(
+            label: isArabic ? 'التنبيه قبل (دقائق)' : 'Alert Before (Mins)',
+            value: state.prayerOffset,
+            items: [0, 5, 10, 15]
+                .map(
+                  (val) => DropdownMenuItem<int>(
                     value: val,
                     child: Text(
                       val == 0 ? (isArabic ? 'في الوقت' : 'On Time') : '$val',
                     ),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) {
-                    context.read<SettingsCubit>().setPrayerOffset(val);
-                    context.read<PrayerTimesCubit>().fetchPrayerTimes(
-                      force: true,
-                    );
-                  }
-                },
-              ),
-            ],
+                  ),
+                )
+                .toList(),
+            onChanged: (val) {
+              if (val == null) return;
+              settings.setPrayerOffset(val);
+              prayerCubit.fetchPrayerTimes(force: true);
+            },
           ),
         ],
       ),

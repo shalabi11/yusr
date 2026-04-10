@@ -64,7 +64,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 child: CircularProgressIndicator(color: AppColors.accent),
               );
             }
-
             if (state is PrayerTimesError) {
               return Center(
                 child: Padding(
@@ -94,11 +93,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 ),
               );
             }
-
             if (state is PrayerTimesLoaded) {
               return PrayerTimesLoadedView(state: state, onRefresh: _refresh);
             }
-
             return const SizedBox.shrink();
           },
         ),
