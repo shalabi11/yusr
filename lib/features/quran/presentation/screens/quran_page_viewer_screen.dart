@@ -4,6 +4,8 @@ import 'package:yusr_app/features/quran/data/models/quran_models.dart';
 import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
 import 'package:yusr_app/injection_container.dart';
 
+import 'quran_page_viewer_widgets.dart';
+
 class QuranPageViewerScreen extends StatefulWidget {
   final int initialPage;
   final List<int>? pages;
@@ -23,10 +25,11 @@ class QuranPageViewerScreen extends StatefulWidget {
 class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
   final QuranRepository _repo = sl<QuranRepository>();
   late final PageController _controller;
-  late int _currentPage;
   late final List<int> _pages;
+  late int _currentPage;
   bool _reverse = false;
   final Set<int> _savedPages = <int>{};
+  final Map<int, _PageMeta> _pageMetaByPage = <int, _PageMeta>{};
 
   @override
   void initState() {
@@ -34,28 +37,109 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
     _pages = widget.pages == null || widget.pages!.isEmpty
         ? List<int>.generate(604, (i) => i + 1)
         : widget.pages!;
-
     final initial = _pages.contains(widget.initialPage)
         ? widget.initialPage
         : _pages.first;
     _currentPage = initial;
     _controller = PageController(initialPage: _pages.indexOf(initial));
-    _hydrateSavedPages();
+    final bookmarks = _repo.getBookmarks();
+    _savedPages
+      ..clear()
+      ..addAll(bookmarks.map((b) => b.pageNumber));
+    final lastReadPage = _repo.getLastRead()?.pageNumber;
+    if (lastReadPage != null) _savedPages.add(lastReadPage);
+    _loadPageMetaByPage();
   }
 
-  void _hydrateSavedPages() {
-    final bookmarks = _repo.getBookmarks();
-    final saved = bookmarks.map((b) => b.pageNumber);
-    final lastReadPage = _repo.getLastRead()?.pageNumber;
-
-    setState(() {
-      _savedPages
-        ..clear()
-        ..addAll(saved);
-      if (lastReadPage != null) {
-        _savedPages.add(lastReadPage);
+  Future<void> _loadPageMetaByPage() async {
+    final surahs = await _repo.loadSurahs();
+    final map = <int, _PageMeta>{};
+    for (final surah in surahs) {
+      for (final verse in surah.verses) {
+        map.putIfAbsent(
+          verse.page,
+          () => _PageMeta(surahName: surah.nameAr, juzNumber: verse.juz),
+        );
       }
+    }
+    if (!mounted) return;
+    setState(() {
+      _pageMetaByPage
+        ..clear()
+        ..addAll(map);
     });
+  }
+
+  Widget _buildPageOverlay(int page) {
+    final meta = _pageMetaByPage[page];
+    final surahName = meta?.surahName ?? 'سورة غير محددة';
+    final juzLabel = meta == null ? '-' : '${meta.juzNumber}';
+    return IgnorePointer(
+      child: Stack(
+        children: [
+          Positioned(
+            top: 64,
+            left: 12,
+            right: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'السورة: $surahName',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.primaryDark,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'الجزء $juzLabel',
+                    style: const TextStyle(
+                      color: AppColors.primaryDark,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 14,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  'الصفحة $page',
+                  style: const TextStyle(
+                    color: AppColors.primaryDark,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _bookmarkCurrentPage() async {
@@ -63,7 +147,6 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
     if (fromPage != null) {
       await _repo.addBookmark(fromPage);
     } else {
-      // Fallback: persist current page as last-read even if page->verse mapping is unavailable.
       final previous = _repo.getLastRead();
       await _repo.saveLastRead(
         QuranLastRead(
@@ -75,9 +158,7 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
       );
     }
 
-    setState(() {
-      _savedPages.add(_currentPage);
-    });
+    setState(() => _savedPages.add(_currentPage));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('تم حفظ المرجعية عند الصفحة $_currentPage')),
@@ -94,30 +175,13 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        // backgroundColor: AppColors.primary.withValues(alpha: 0.8),
-        title: widget.showPageTitle ? Text('الصفحة $_currentPage') : null,
-        iconTheme: const IconThemeData(color: AppColors.primaryDark),
-        actionsIconTheme: const IconThemeData(color: AppColors.primaryDark),
-        actions: [
-          IconButton(
-            onPressed: _bookmarkCurrentPage,
-            icon: Icon(
-              _savedPages.contains(_currentPage)
-                  ? Icons.bookmark_added
-                  : Icons.bookmark_add_outlined,
-              color: _savedPages.contains(_currentPage)
-                  ? Colors.green.shade700
-                  : AppColors.primaryDark,
-            ),
-            tooltip: 'حفظ مرجعية القراءة',
-          ),
-          IconButton(
-            onPressed: () => setState(() => _reverse = !_reverse),
-            icon: const Icon(Icons.swap_horiz),
-            tooltip: 'تبديل اتجاه التقليب',
-          ),
-        ],
+      appBar: buildQuranPageAppBar(
+        context: context,
+        currentPage: _currentPage,
+        showPageTitle: widget.showPageTitle,
+        savedPages: _savedPages,
+        onBookmark: _bookmarkCurrentPage,
+        onToggleReverse: () => setState(() => _reverse = !_reverse),
       ),
       body: Container(
         color: Colors.white,
@@ -126,26 +190,13 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
             controller: _controller,
             reverse: _reverse,
             itemCount: _pages.length,
-            onPageChanged: (index) {
-              setState(() {
-                _currentPage = _pages[index];
-              });
-            },
+            onPageChanged: (index) =>
+                setState(() => _currentPage = _pages[index]),
             itemBuilder: (context, index) {
               final page = _pages[index];
-              return InteractiveViewer(
-                minScale: 1,
-                maxScale: 4,
-                child: Center(
-                  child: Image.asset(
-                    'assets/quran_images/$page.png',
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const Text(
-                      'تعذر تحميل الصورة',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
+              return Stack(
+                fit: StackFit.expand,
+                children: [buildQuranPageImage(page), _buildPageOverlay(page)],
               );
             },
           ),
@@ -153,4 +204,11 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
       ),
     );
   }
+}
+
+class _PageMeta {
+  final String surahName;
+  final int juzNumber;
+
+  const _PageMeta({required this.surahName, required this.juzNumber});
 }

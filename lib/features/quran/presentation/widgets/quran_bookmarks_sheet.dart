@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:yusr_app/core/theme/app_colors.dart';
-import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
 import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
 import 'package:yusr_app/features/quran/presentation/screens/quran_page_viewer_screen.dart';
 import 'package:yusr_app/features/quran/presentation/screens/quran_reader_screen.dart';
+
+import 'quran_bookmarks_sheet_view.dart';
 
 class QuranBookmarksSheet extends StatefulWidget {
   const QuranBookmarksSheet({
@@ -37,62 +37,11 @@ class _QuranBookmarksSheetState extends State<QuranBookmarksSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: GlassContainer(
-        borderRadius: 20,
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'العلامات المرجعية',
-              style: TextStyle(
-                color: AppColors.accent,
-                fontWeight: FontWeight.bold,
-                fontSize: 17,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Flexible(
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: _bookmarks.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (_, index) {
-                  final bookmark = _bookmarks[index];
-                  final surahName = _surahNameFor(bookmark.surahNumber);
-
-                  return ListTile(
-                    leading: const Icon(
-                      Icons.bookmark,
-                      color: AppColors.accent,
-                    ),
-                    title: Text(
-                      surahName,
-                      style: const TextStyle(color: AppColors.textWhite),
-                    ),
-                    subtitle: Text(
-                      'آية ${bookmark.verseNumber} • صفحة ${bookmark.pageNumber} • جزء ${bookmark.juzNumber}',
-                      style: TextStyle(
-                        color: AppColors.textWhite.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    onTap: () => _openBookmark(bookmark),
-                    trailing: IconButton(
-                      icon: const Icon(
-                        Icons.delete_outline,
-                        color: Colors.redAccent,
-                      ),
-                      onPressed: () => _deleteBookmark(bookmark),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+    return QuranBookmarksSheetView(
+      bookmarks: _bookmarks,
+      surahNameFor: _surahNameFor,
+      onOpen: _openBookmark,
+      onDelete: _deleteBookmark,
     );
   }
 

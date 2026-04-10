@@ -3,8 +3,8 @@ import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
 import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
-import 'package:yusr_app/features/quran/presentation/screens/quran_page_viewer_screen.dart';
-import 'package:yusr_app/features/quran/presentation/screens/quran_reader_screen.dart';
+
+import 'quran_surah_tab_helpers.dart';
 
 class QuranSurahTab extends StatelessWidget {
   const QuranSurahTab({
@@ -39,31 +39,13 @@ class QuranSurahTab extends StatelessWidget {
       itemBuilder: (_, index) {
         final surah = filtered[index];
         return InkWell(
-          onTap: () async {
-            if (readAsText) {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => QuranReaderScreen(surah: surah),
-                ),
-              );
-            } else {
-              final pages = await repo.pagesForSurah(surah.number);
-              if (!context.mounted || pages.isEmpty) return;
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => QuranPageViewerScreen(
-                    initialPage: pages.first,
-                    showPageTitle: false,
-                  ),
-                ),
-              );
-            }
-
-            if (!context.mounted) return;
-            await onReload();
-          },
+          onTap: () => openSurah(
+            context,
+            surah: surah,
+            readAsText: readAsText,
+            repo: repo,
+            onReload: onReload,
+          ),
           borderRadius: BorderRadius.circular(16),
           child: GlassContainer(
             borderRadius: 16,
@@ -94,21 +76,7 @@ class QuranSurahTab extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        search.isEmpty
-                            ? '${surah.versesCount} آية'
-                            : (() {
-                                final match = surah.verses.where(
-                                  (v) => v.textAr.contains(search),
-                                );
-                                if (match.isEmpty) {
-                                  return '${surah.versesCount} آية';
-                                }
-                                final preview = match.first.textAr;
-                                final short = preview.length > 45
-                                    ? '${preview.substring(0, 45)}...'
-                                    : preview;
-                                return 'نتيجة آية: $short';
-                              })(),
+                        buildSurahSubtitle(surah, search),
                         style: TextStyle(
                           color: AppColors.textWhite.withValues(alpha: 0.7),
                         ),
