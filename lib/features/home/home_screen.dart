@@ -14,6 +14,14 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.pushNamed(context, '/assistant'),
+        backgroundColor: AppColors.accent,
+        foregroundColor: AppColors.primaryDark,
+        icon: const Icon(Icons.smart_toy_outlined),
+        label: Text(AppStrings.aiAssistant.tr),
+      ),
       body: AppRadialBackground(
         child: CustomScrollView(
           slivers: [
@@ -75,7 +83,7 @@ class HomeScreen extends StatelessWidget {
                 ]),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 40)),
+            const SliverToBoxAdapter(child: SizedBox(height: 120)),
           ],
         ),
       ),

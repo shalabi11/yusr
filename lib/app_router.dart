@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:yusr_app/features/ai_assistant/presentation/screens/ai_assistant_entry_screen.dart';
+import 'package:yusr_app/features/ai_assistant/presentation/screens/assistant_auth_screen.dart';
 import 'package:yusr_app/features/adhkar/presentation/screens/adhkar_screen.dart';
 import 'package:yusr_app/features/splash/splash_screen.dart';
 import 'package:yusr_app/features/intro/intro_screen.dart';
@@ -27,6 +29,18 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const AdhkarScreen());
       case '/prayer':
         return MaterialPageRoute(builder: (_) => const PrayerTimesScreen());
+      case '/assistant':
+        return MaterialPageRoute(
+          builder: (_) => const AIAssistantEntryScreen(),
+        );
+      case '/assistant-auth':
+        final args = settings.arguments as Map<String, dynamic>?;
+        final mode = args?['mode'] == AssistantAuthMode.signUp
+            ? AssistantAuthMode.signUp
+            : AssistantAuthMode.signIn;
+        return MaterialPageRoute(
+          builder: (_) => AssistantAuthScreen(initialMode: mode),
+        );
       default:
         return null;
     }
