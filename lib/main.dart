@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:yusr_app/app_router.dart';
 import 'package:yusr_app/core/theme/app_theme.dart';
 import 'package:yusr_app/core/services/notification_service.dart';
+import 'package:yusr_app/core/services/supabase/supabase_bootstrap.dart';
 import 'package:yusr_app/core/bloc/settings_cubit.dart';
 import 'package:yusr_app/injection_container.dart';
 
@@ -11,6 +12,7 @@ import 'package:yusr_app/features/reminders/data/repositories/reminders_reposito
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SupabaseBootstrap.init();
   await initDependencies();
   await NotificationService.init();
   await _syncReminderNotificationsOnStartup();
@@ -30,7 +32,9 @@ class IslamicApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (context) => sl<SettingsCubit>()),
+        BlocProvider(
+          create: (context) => sl<SettingsCubit>()..loadFromRemoteOnStartup(),
+        ),
         BlocProvider(
           create: (context) =>
               sl<PrayerTimesCubit>()..fetchPrayerTimes(force: true),

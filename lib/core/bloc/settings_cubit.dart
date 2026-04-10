@@ -1,138 +1,70 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:yusr_app/core/services/storage/istorage_service.dart';
+
 import '../services/notification_service.dart';
 import '../localization/app_localizations.dart';
+import 'settings/settings_remote_sync_service.dart';
+import 'settings/settings_state.dart';
 
-class SettingsState {
-  final String langCode;
-  final int prayerOffset;
-  final bool playAdhan;
-  final bool stickyNotification;
-  final String adhanSound;
-  final bool quranReadAsText;
-  final bool fastingRemindersEnabled;
-  final bool whiteDaysReminderEnabled;
-  final bool mondayThursdayReminderEnabled;
+export 'settings/settings_state.dart';
 
-  const SettingsState({
-    required this.langCode,
-    required this.prayerOffset,
-    required this.playAdhan,
-    required this.stickyNotification,
-    required this.adhanSound,
-    required this.quranReadAsText,
-    required this.fastingRemindersEnabled,
-    required this.whiteDaysReminderEnabled,
-    required this.mondayThursdayReminderEnabled,
-  });
+part 'settings/settings_cubit_storage_sync.dart';
+part 'settings/settings_cubit_mutations.dart';
 
-  SettingsState copyWith({
-    String? langCode,
-    int? prayerOffset,
-    bool? playAdhan,
-    bool? stickyNotification,
-    String? adhanSound,
-    bool? quranReadAsText,
-    bool? fastingRemindersEnabled,
-    bool? whiteDaysReminderEnabled,
-    bool? mondayThursdayReminderEnabled,
-  }) {
-    return SettingsState(
-      langCode: langCode ?? this.langCode,
-      prayerOffset: prayerOffset ?? this.prayerOffset,
-      playAdhan: playAdhan ?? this.playAdhan,
-      stickyNotification: stickyNotification ?? this.stickyNotification,
-      adhanSound: adhanSound ?? this.adhanSound,
-      quranReadAsText: quranReadAsText ?? this.quranReadAsText,
-      fastingRemindersEnabled:
-          fastingRemindersEnabled ?? this.fastingRemindersEnabled,
-      whiteDaysReminderEnabled:
-          whiteDaysReminderEnabled ?? this.whiteDaysReminderEnabled,
-      mondayThursdayReminderEnabled:
-          mondayThursdayReminderEnabled ?? this.mondayThursdayReminderEnabled,
-    );
-  }
-}
-
-class SettingsCubit extends Cubit<SettingsState> {
-  SettingsCubit(this._storageService, this._notificationService)
-    : super(
-        SettingsState(
-          langCode: _storageService.language,
-          prayerOffset: _storageService.prayerOffset,
-          playAdhan: _storageService.playAdhan,
-          stickyNotification: _storageService.stickyNotification,
-          adhanSound: _storageService.adhanSound,
-          quranReadAsText: _storageService.quranReadAsText,
-          fastingRemindersEnabled: _storageService.fastingRemindersEnabled,
-          whiteDaysReminderEnabled: _storageService.whiteDaysReminderEnabled,
-          mondayThursdayReminderEnabled:
-              _storageService.mondayThursdayReminderEnabled,
-        ),
-      ) {
+class SettingsCubit extends Cubit<SettingsState>
+    with SettingsCubitStorageSync, SettingsCubitMutations {
+  SettingsCubit(
+    this._storageService,
+    this._notificationService, {
+    SupabaseClient? supabaseClient,
+  }) : _remoteSync = SettingsRemoteSyncService(supabaseClient),
+       super(
+         SettingsState(
+           langCode: _storageService.language,
+           prayerOffset: _storageService.prayerOffset,
+           playAdhan: _storageService.playAdhan,
+           stickyNotification: _storageService.stickyNotification,
+           adhanSound: _storageService.adhanSound,
+           quranReadAsText: _storageService.quranReadAsText,
+           fastingRemindersEnabled: _storageService.fastingRemindersEnabled,
+           whiteDaysReminderEnabled: _storageService.whiteDaysReminderEnabled,
+           mondayThursdayReminderEnabled:
+               _storageService.mondayThursdayReminderEnabled,
+         ),
+       ) {
     // Sync current lang on boot
     AppLocalizations.currentLang = state.langCode;
   }
 
   final IStorageService _storageService;
   final INotificationService _notificationService;
+  final SettingsRemoteSyncService _remoteSync;
+  bool _isApplyingRemoteState = false;
 
-  void changeLanguage(String code) {
-    if (code == state.langCode) return;
-    _storageService.setLanguage(code);
-    AppLocalizations.currentLang = code;
-    emit(state.copyWith(langCode: code));
-  }
+  Future<void> loadFromRemoteOnStartup() async {
+    try {
+      final remoteState = await _remoteSync.load(state);
+      if (remoteState == null) {
+        await syncStateToRemoteInternal(state);
+        return;
+      }
 
-  void setPrayerOffset(int offset) {
-    if (offset == state.prayerOffset) return;
-    _storageService.setPrayerOffset(offset);
-    emit(state.copyWith(prayerOffset: offset));
-  }
+      _isApplyingRemoteState = true;
+      try {
+        await _applyStateToStorage(remoteState);
 
-  void setPlayAdhan(bool play) {
-    if (play == state.playAdhan) return;
-    _storageService.setPlayAdhan(play);
-    emit(state.copyWith(playAdhan: play));
-  }
+        AppLocalizations.currentLang = remoteState.langCode;
+        emit(remoteState);
 
-  void setStickyNotification(bool sticky) {
-    if (sticky == state.stickyNotification) return;
-    _storageService.setStickyNotification(sticky);
-    emit(state.copyWith(stickyNotification: sticky));
-
-    if (!sticky) {
-      _notificationService.removePersistentNotification();
+        if (!remoteState.stickyNotification) {
+          await _notificationService.removePersistentNotification();
+        }
+      } finally {
+        _isApplyingRemoteState = false;
+      }
+    } catch (_) {
+      // Keep local settings as source of truth if remote load fails.
     }
-  }
-
-  void setAdhanSound(String soundKey) {
-    if (soundKey == state.adhanSound) return;
-    _storageService.setAdhanSound(soundKey);
-    emit(state.copyWith(adhanSound: soundKey));
-  }
-
-  void setQuranReadAsText(bool readAsText) {
-    if (readAsText == state.quranReadAsText) return;
-    _storageService.setQuranReadAsText(readAsText);
-    emit(state.copyWith(quranReadAsText: readAsText));
-  }
-
-  Future<void> setFastingRemindersEnabled(bool enabled) async {
-    if (enabled == state.fastingRemindersEnabled) return;
-    await _storageService.setFastingRemindersEnabled(enabled);
-    emit(state.copyWith(fastingRemindersEnabled: enabled));
-  }
-
-  Future<void> setWhiteDaysReminderEnabled(bool enabled) async {
-    if (enabled == state.whiteDaysReminderEnabled) return;
-    await _storageService.setWhiteDaysReminderEnabled(enabled);
-    emit(state.copyWith(whiteDaysReminderEnabled: enabled));
-  }
-
-  Future<void> setMondayThursdayReminderEnabled(bool enabled) async {
-    if (enabled == state.mondayThursdayReminderEnabled) return;
-    await _storageService.setMondayThursdayReminderEnabled(enabled);
-    emit(state.copyWith(mondayThursdayReminderEnabled: enabled));
   }
 }
