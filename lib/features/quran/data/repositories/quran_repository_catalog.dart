@@ -6,6 +6,24 @@ extension QuranRepositoryCatalog on QuranRepository {
       return QuranRepository._cachedSurahs!;
     }
 
+    final remote = await _loadSurahsFromRemote();
+    if (remote.isNotEmpty) {
+      QuranRepository._cachedSurahs = remote;
+      return QuranRepository._cachedSurahs!;
+    }
+
+    return _loadSurahsFromAsset();
+  }
+
+  Future<List<QuranSurah>> _loadSurahsFromRemote() async {
+    try {
+      return await _catalogRemote?.loadSurahs() ?? const [];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<List<QuranSurah>> _loadSurahsFromAsset() async {
     final raw = await rootBundle.loadString(QuranRepository._quranAssetPath);
     final data = jsonDecode(raw) as List<dynamic>;
     QuranRepository._cachedSurahs = data

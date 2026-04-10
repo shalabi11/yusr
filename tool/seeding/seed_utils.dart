@@ -2,7 +2,8 @@ import 'dart:io';
 
 import 'package:supabase/supabase.dart';
 
-const int chunkSize = 500;
+const int chunkSize = 250;
+const int maxChunkAttempts = 4;
 
 Future<void> upsertInChunks({
   required SupabaseClient client,
@@ -19,7 +20,20 @@ Future<void> upsertInChunks({
     final end = (i + chunkSize < rows.length) ? i + chunkSize : rows.length;
     final batch = rows.sublist(i, end);
 
-    await client.from(table).upsert(batch, onConflict: onConflict);
-    stdout.writeln('Upserted $table rows ${i + 1}..$end/${rows.length}');
+    var attempt = 1;
+    while (true) {
+      try {
+        await client.from(table).upsert(batch, onConflict: onConflict);
+        stdout.writeln('Upserted $table rows ${i + 1}..$end/${rows.length}');
+        break;
+      } catch (e) {
+        if (attempt >= maxChunkAttempts) rethrow;
+        stdout.writeln(
+          'Retrying $table rows ${i + 1}..$end (attempt $attempt failed: $e)',
+        );
+        await Future<void>.delayed(Duration(seconds: attempt));
+        attempt++;
+      }
+    }
   }
 }

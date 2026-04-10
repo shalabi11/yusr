@@ -20,7 +20,7 @@ void main() async {
 }
 
 Future<void> _syncReminderNotificationsOnStartup() async {
-  final reminders = sl<RemindersRepository>().getReminders();
+  final reminders = await sl<RemindersRepository>().loadRemindersOnStartup();
   await NotificationService.syncReminders(reminders);
   await NotificationService.syncFastingReminders();
 }

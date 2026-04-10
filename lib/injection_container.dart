@@ -7,9 +7,12 @@ import 'package:yusr_app/core/services/storage/storage_sevice_impl.dart';
 import 'package:yusr_app/core/services/storage_service.dart';
 import 'package:yusr_app/core/services/supabase/supabase_bootstrap.dart';
 import 'package:yusr_app/features/adhkar/data/repositories/adhkar_repository.dart';
+import 'package:yusr_app/features/adhkar/data/repositories/adhkar_remote_data_source.dart';
 import 'package:yusr_app/features/home/data/daily_ayah_repository.dart';
+import 'package:yusr_app/features/home/data/daily_ayah_remote_data_source.dart';
 import 'package:yusr_app/features/prayer_times/data/repositories/prayer_times_repository.dart';
 import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
+import 'package:yusr_app/features/quran/data/repositories/quran_catalog_remote_service.dart';
 import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
 import 'package:yusr_app/features/quran/data/repositories/quran_remote_sync_service.dart';
 import 'package:yusr_app/features/reminders/data/repositories/reminders_repository.dart';
@@ -50,7 +53,13 @@ Future<void> initDependencies() async {
     );
   }
   if (!sl.isRegistered<AdhkarRepository>()) {
-    sl.registerLazySingleton<AdhkarRepository>(() => AdhkarRepository());
+    sl.registerLazySingleton<AdhkarRepository>(
+      () => AdhkarRepository(
+        remoteDataSource: sl.isRegistered<SupabaseClient>()
+            ? AdhkarRemoteDataSource(sl<SupabaseClient>())
+            : null,
+      ),
+    );
   }
   if (!sl.isRegistered<QuranRepository>()) {
     sl.registerLazySingleton<QuranRepository>(
@@ -58,11 +67,20 @@ Future<void> initDependencies() async {
         remoteSync: sl.isRegistered<SupabaseClient>()
             ? QuranRemoteSyncService(sl<SupabaseClient>())
             : null,
+        catalogRemote: sl.isRegistered<SupabaseClient>()
+            ? QuranCatalogRemoteService(sl<SupabaseClient>())
+            : null,
       ),
     );
   }
   if (!sl.isRegistered<DailyAyahRepository>()) {
-    sl.registerLazySingleton<DailyAyahRepository>(() => DailyAyahRepository());
+    sl.registerLazySingleton<DailyAyahRepository>(
+      () => DailyAyahRepository(
+        remoteDataSource: sl.isRegistered<SupabaseClient>()
+            ? DailyAyahRemoteDataSource(sl<SupabaseClient>())
+            : null,
+      ),
+    );
   }
 
   // Cubits

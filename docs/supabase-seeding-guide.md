@@ -5,6 +5,14 @@ This guide seeds the static app content into Supabase:
 - Adhkar categories and items
 - Daily content records
 
+## 0) Create schema and policies
+
+Before seeding, run the SQL file in Supabase SQL Editor:
+
+```sql
+-- copy/paste docs/supabase-schema.sql and run it once
+```
+
 ## 1) Install dependencies
 
 Run:
