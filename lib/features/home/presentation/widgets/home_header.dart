@@ -46,19 +46,32 @@ class HomeHeader extends StatelessWidget {
             ),
           ],
         ),
-        InkWell(
-          onTap: () {
-            Navigator.pushNamed(
-              context,
-              '/settings',
-            ); // 🚀 Fixed to transition properly to settings view!
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: const GlassContainer(
-            padding: EdgeInsets.all(12),
-            borderRadius: 12,
-            child: Icon(Icons.settings, color: AppColors.accent),
-          ),
+        Row(
+          children: [
+            InkWell(
+              onTap: () {
+                Navigator.pushNamed(context, '/profile');
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: const GlassContainer(
+                padding: EdgeInsets.all(12),
+                borderRadius: 12,
+                child: Icon(Icons.person_outline, color: AppColors.accent),
+              ),
+            ),
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: () {
+                Navigator.pushNamed(context, '/settings');
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: const GlassContainer(
+                padding: EdgeInsets.all(12),
+                borderRadius: 12,
+                child: Icon(Icons.settings, color: AppColors.accent),
+              ),
+            ),
+          ],
         ),
       ],
     );

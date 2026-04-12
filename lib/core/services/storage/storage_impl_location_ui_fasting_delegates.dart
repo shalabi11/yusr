@@ -30,6 +30,11 @@ mixin StorageLocationUiFastingDelegates {
 
   Future<void> setIntroSeen(bool seen) => _ui.setIntroSeen(seen);
 
+  bool get accountOnboardingSeen => _ui.accountOnboardingSeen;
+
+  Future<void> setAccountOnboardingSeen(bool seen) =>
+      _ui.setAccountOnboardingSeen(seen);
+
   bool get fastingRemindersEnabled => _fasting.fastingRemindersEnabled;
 
   Future<void> setFastingRemindersEnabled(bool enabled) =>

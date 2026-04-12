@@ -1,0 +1,1 @@
+enum SignUpResult { signedIn, emailConfirmationRequired }

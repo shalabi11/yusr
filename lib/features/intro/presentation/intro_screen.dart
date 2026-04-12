@@ -44,7 +44,7 @@ class _IntroScreenState extends State<IntroScreen> {
     if (_currentPage == _pages.length - 1) {
       await StorageService.setIntroSeen(true);
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, '/onboarding-auth');
       return;
     }
     _pageController.nextPage(

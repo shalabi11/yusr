@@ -19,6 +19,16 @@ const Map<String, String> appTranslationsAr = {
   'reminders': 'التذكيرات',
   'prayerTimes': 'مواقيت الصلاة',
   'aiAssistant': 'المساعد يُسر',
+  'signIn': 'تسجيل الدخول',
+  'signUp': 'إنشاء حساب',
+  'skipForNow': 'تخطي الآن',
+  'accountOnboardingTitle': 'ابدأ بحسابك في يُسر',
+  'accountOnboardingSubtitle':
+      'يمكنك تسجيل الدخول أو إنشاء حساب الآن، أو المتابعة بدون حساب.',
+  'accountOnboardingWarning':
+      'تنبيه: بدون حساب لن تتمكن من استخدام المساعد يُسر، وقد تفقد مزايا المزامنة بين الأجهزة.',
+  'accountOnboardingSkipHint':
+      'يمكنك دائمًا إنشاء حساب لاحقًا من شاشة المساعد.',
   'remindersTitle': 'التذكيرات',
   'chooseTime': 'اختر وقت التذكير',
   'daily': 'يومياً',

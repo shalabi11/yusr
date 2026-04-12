@@ -17,4 +17,11 @@ class StorageUiModule {
   Future<void> setIntroSeen(bool seen) async {
     await _prefs.setBool('intro_seen', seen);
   }
+
+  bool get accountOnboardingSeen =>
+      _prefs.getBool('account_onboarding_seen') ?? false;
+
+  Future<void> setAccountOnboardingSeen(bool seen) async {
+    await _prefs.setBool('account_onboarding_seen', seen);
+  }
 }

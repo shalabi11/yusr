@@ -25,6 +25,13 @@ class AppStrings {
   static const String reminders = 'reminders';
   static const String prayerTimes = 'prayerTimes';
   static const String aiAssistant = 'aiAssistant';
+  static const String signIn = 'signIn';
+  static const String signUp = 'signUp';
+  static const String skipForNow = 'skipForNow';
+  static const String accountOnboardingTitle = 'accountOnboardingTitle';
+  static const String accountOnboardingSubtitle = 'accountOnboardingSubtitle';
+  static const String accountOnboardingWarning = 'accountOnboardingWarning';
+  static const String accountOnboardingSkipHint = 'accountOnboardingSkipHint';
 
   // Reminders
   static const String remindersTitle = 'remindersTitle';

@@ -19,6 +19,16 @@ const Map<String, String> appTranslationsEn = {
   'reminders': 'Reminders',
   'prayerTimes': 'Prayer Times',
   'aiAssistant': 'Yusr Assistant',
+  'signIn': 'Sign in',
+  'signUp': 'Sign up',
+  'skipForNow': 'Skip for now',
+  'accountOnboardingTitle': 'Start with your Yusr account',
+  'accountOnboardingSubtitle':
+      'Sign in or create an account now, or continue without an account.',
+  'accountOnboardingWarning':
+      'Note: without an account, Yusr Assistant is unavailable and cross-device sync may be lost.',
+  'accountOnboardingSkipHint':
+      'You can always create an account later from the assistant screen.',
   'remindersTitle': 'Reminders',
   'chooseTime': 'Choose Reminder Time',
   'daily': 'Daily',

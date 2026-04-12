@@ -51,6 +51,9 @@ class StorageService {
       _instance.setRemindersSwipeHintSeen(seen);
   static bool get introSeen => _instance.introSeen;
   static Future<void> setIntroSeen(bool seen) => _instance.setIntroSeen(seen);
+  static bool get accountOnboardingSeen => _instance.accountOnboardingSeen;
+  static Future<void> setAccountOnboardingSeen(bool seen) =>
+      _instance.setAccountOnboardingSeen(seen);
   static bool get fastingRemindersEnabled => _instance.fastingRemindersEnabled;
   static Future<void> setFastingRemindersEnabled(bool enabled) =>
       _instance.setFastingRemindersEnabled(enabled);

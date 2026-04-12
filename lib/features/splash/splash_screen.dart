@@ -28,7 +28,14 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.forward();
 
     Timer(const Duration(seconds: 3), () {
-      final nextRoute = StorageService.introSeen ? '/home' : '/intro';
+      if (!mounted) return;
+
+      final hasSeenIntro = StorageService.introSeen;
+      final hasSeenAccountOnboarding = StorageService.accountOnboardingSeen;
+
+      final nextRoute = !hasSeenIntro
+          ? '/intro'
+          : (hasSeenAccountOnboarding ? '/home' : '/onboarding-auth');
       Navigator.pushReplacementNamed(context, nextRoute);
     });
   }

@@ -38,6 +38,9 @@ abstract class IStorageService {
   bool get introSeen;
   Future<void> setIntroSeen(bool seen);
 
+  bool get accountOnboardingSeen;
+  Future<void> setAccountOnboardingSeen(bool seen);
+
   bool get fastingRemindersEnabled;
   Future<void> setFastingRemindersEnabled(bool enabled);
 

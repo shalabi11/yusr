@@ -44,14 +44,14 @@ extension AIAssistantEntryGate on AIAssistantEntryScreen {
                           Navigator.pushNamed(
                             context,
                             '/assistant-auth',
-                            arguments: {'mode': AssistantAuthMode.signIn},
+                            arguments: {'isSignUp': true},
                           );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accent,
                           foregroundColor: AppColors.primaryDark,
                         ),
-                        child: const Text('تسجيل الدخول'),
+                        child: const Text('إنشاء حساب جديد'),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -62,10 +62,10 @@ extension AIAssistantEntryGate on AIAssistantEntryScreen {
                           Navigator.pushNamed(
                             context,
                             '/assistant-auth',
-                            arguments: {'mode': AssistantAuthMode.signUp},
+                            arguments: {'isSignUp': false},
                           );
                         },
-                        child: const Text('إنشاء حساب'),
+                        child: const Text('لديك حساب؟ تسجيل الدخول'),
                       ),
                     ),
                   ],
