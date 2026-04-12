@@ -1,10 +1,16 @@
--- Supabase schema for Yusr app (content + user sync tables)
--- Run this once in Supabase SQL Editor before seeding.
+-- Migration: from docs/supabase.sql shape to docs/supabase-schema.sql shape
+-- Goal: align schema without dropping user data.
+-- Notes:
+-- 1) This script is additive/transformative and avoids destructive DROP TABLE/DROP COLUMN.
+-- 2) It may rename old reminders table to user_reminders_legacy when legacy UUID shape is detected.
+-- 3) Run in Supabase SQL Editor with a service role session.
+
+begin;
 
 create extension if not exists pgcrypto;
 
 -- =============================
--- Catalog content tables
+-- Catalog tables alignment
 -- =============================
 
 create table if not exists public.quran_surahs (
@@ -15,6 +21,17 @@ create table if not exists public.quran_surahs (
   created_at timestamptz not null default now()
 );
 
+alter table if exists public.quran_surahs
+  alter column surah_number type integer,
+  alter column verses_count type integer;
+
+update public.quran_surahs
+set name_en = coalesce(nullif(name_en, ''), name_ar)
+where name_en is null or name_en = '';
+
+alter table if exists public.quran_surahs
+  alter column name_en set not null;
+
 create table if not exists public.quran_verses (
   surah_number integer not null references public.quran_surahs (surah_number) on delete cascade,
   verse_number integer not null,
@@ -24,6 +41,32 @@ create table if not exists public.quran_verses (
   created_at timestamptz not null default now(),
   primary key (surah_number, verse_number)
 );
+
+alter table if exists public.quran_verses
+  alter column surah_number type integer,
+  alter column verse_number type integer,
+  alter column juz_number type integer,
+  alter column page_number type integer;
+
+-- Remove duplicate rows before switching PK to composite key.
+with ranked as (
+  select ctid,
+         row_number() over (
+           partition by surah_number, verse_number
+           order by created_at nulls last, ctid
+         ) as rn
+  from public.quran_verses
+)
+delete from public.quran_verses q
+using ranked r
+where q.ctid = r.ctid
+  and r.rn > 1;
+
+alter table if exists public.quran_verses
+  drop constraint if exists quran_verses_pkey;
+
+alter table if exists public.quran_verses
+  add constraint quran_verses_pkey primary key (surah_number, verse_number);
 
 create index if not exists idx_quran_verses_page_number on public.quran_verses (page_number);
 create index if not exists idx_quran_verses_juz_number on public.quran_verses (juz_number);
@@ -58,8 +101,28 @@ create table if not exists public.daily_content (
   created_at timestamptz not null default now()
 );
 
+alter table if exists public.daily_content
+  add column if not exists content_date date,
+  add column if not exists content text,
+  add column if not exists source text,
+  add column if not exists theme text,
+  add column if not exists created_at timestamptz not null default now();
+
+update public.daily_content
+set source = 'unknown'
+where source is null;
+
+alter table if exists public.daily_content
+  alter column source set not null;
+
+alter table if exists public.daily_content
+  drop constraint if exists daily_content_pkey;
+
+alter table if exists public.daily_content
+  add constraint daily_content_pkey primary key (content_date);
+
 -- =============================
--- User-sync tables
+-- User table alignment
 -- =============================
 
 create table if not exists public.user_settings (
@@ -77,6 +140,28 @@ create table if not exists public.user_settings (
   created_at timestamptz not null default now()
 );
 
+alter table if exists public.user_settings
+  add column if not exists updated_at timestamptz not null default now(),
+  add column if not exists created_at timestamptz not null default now();
+
+alter table if exists public.user_settings
+  alter column lang_code set default 'ar',
+  alter column prayer_offset set default 0,
+  alter column play_adhan set default true,
+  alter column sticky_notification set default false,
+  alter column adhan_sound set default 'adhan',
+  alter column quran_read_as_text set default true,
+  alter column fasting_reminders_enabled set default false,
+  alter column white_days_reminder_enabled set default false,
+  alter column monday_thursday_reminder_enabled set default false;
+
+alter table if exists public.user_settings
+  drop constraint if exists user_settings_user_id_fkey;
+
+alter table if exists public.user_settings
+  add constraint user_settings_user_id_fkey
+  foreign key (user_id) references auth.users (id) on delete cascade;
+
 create table if not exists public.user_profiles (
   user_id uuid primary key references auth.users (id) on delete cascade,
   username text not null,
@@ -86,11 +171,71 @@ create table if not exists public.user_profiles (
   constraint user_profiles_username_len check (char_length(username) between 3 and 30)
 );
 
-alter table public.user_profiles
-add column if not exists avatar_url text;
+alter table if exists public.user_profiles
+  add column if not exists avatar_url text,
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
+
+-- Backfill from old profiles table if it exists.
+do $$
+begin
+  if to_regclass('public.profiles') is not null then
+    insert into public.user_profiles (user_id, username, avatar_url, created_at, updated_at)
+    select
+      p.id,
+      left('user_' || substr(replace(p.id::text, '-', ''), 1, 24), 30),
+      p.avatar_url,
+      p.created_at,
+      p.updated_at
+    from public.profiles p
+    where not exists (
+      select 1 from public.user_profiles up where up.user_id = p.id
+    );
+
+    update public.user_profiles up
+    set avatar_url = p.avatar_url,
+        updated_at = now()
+    from public.profiles p
+    where p.id = up.user_id
+      and up.avatar_url is null
+      and p.avatar_url is not null;
+  end if;
+end $$;
+
+-- Keep auth metadata in sync with migrated profile rows.
+do $$
+begin
+  update auth.users u
+  set raw_user_meta_data = coalesce(u.raw_user_meta_data, '{}'::jsonb)
+    || jsonb_build_object(
+      'username', up.username,
+      'avatar_url', up.avatar_url
+    )
+  from public.user_profiles up
+  where up.user_id = u.id;
+exception
+  when insufficient_privilege then
+    -- Some environments block writes to auth schema; ignore in that case.
+    null;
+end $$;
 
 create unique index if not exists idx_user_profiles_username_lower_unique
 on public.user_profiles (lower(username));
+
+-- Handle legacy reminders shape (uuid id + enum columns) by moving to _legacy.
+do $$
+declare id_type text;
+begin
+  select data_type into id_type
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'user_reminders'
+    and column_name = 'id';
+
+  if id_type = 'uuid' and to_regclass('public.user_reminders_legacy') is null then
+    execute 'alter table public.user_reminders rename to user_reminders_legacy';
+  end if;
+end $$;
 
 create table if not exists public.user_reminders (
   id bigint generated by default as identity primary key,
@@ -107,7 +252,47 @@ create table if not exists public.user_reminders (
   updated_at timestamptz not null default now()
 );
 
+alter table if exists public.user_reminders
+  add column if not exists source_id text,
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
+
 create index if not exists idx_user_reminders_user_id on public.user_reminders (user_id);
+
+-- Copy data from legacy reminders once.
+do $$
+begin
+  if to_regclass('public.user_reminders_legacy') is not null then
+    if (select count(*) from public.user_reminders) = 0 then
+      insert into public.user_reminders (
+        user_id,
+        title,
+        subtitle,
+        frequency,
+        weekday,
+        time_of_day,
+        enabled,
+        icon_code_point,
+        source_id,
+        created_at,
+        updated_at
+      )
+      select
+        user_id,
+        title,
+        coalesce(subtitle, ''),
+        case when frequency::text = 'weekly_friday' then 'weekly_friday' else 'daily' end,
+        weekday,
+        time_of_day,
+        coalesce(enabled, true),
+        coalesce(icon_code_point, 0),
+        source_id,
+        created_at,
+        updated_at
+      from public.user_reminders_legacy;
+    end if;
+  end if;
+end $$;
 
 create table if not exists public.user_quran_last_read (
   user_id uuid primary key references auth.users (id) on delete cascade,
@@ -119,6 +304,19 @@ create table if not exists public.user_quran_last_read (
   created_at timestamptz not null default now()
 );
 
+alter table if exists public.user_quran_last_read
+  alter column surah_number type integer,
+  alter column verse_number type integer,
+  alter column page_number type integer,
+  alter column juz_number type integer;
+
+alter table if exists public.user_quran_last_read
+  drop constraint if exists user_quran_last_read_user_id_fkey;
+
+alter table if exists public.user_quran_last_read
+  add constraint user_quran_last_read_user_id_fkey
+  foreign key (user_id) references auth.users (id) on delete cascade;
+
 create table if not exists public.user_quran_bookmarks (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -129,6 +327,19 @@ create table if not exists public.user_quran_bookmarks (
   created_at timestamptz not null default now(),
   unique (user_id, surah_number, verse_number, page_number)
 );
+
+alter table if exists public.user_quran_bookmarks
+  alter column surah_number type integer,
+  alter column verse_number type integer,
+  alter column page_number type integer,
+  alter column juz_number type integer;
+
+alter table if exists public.user_quran_bookmarks
+  drop constraint if exists user_quran_bookmarks_user_id_fkey;
+
+alter table if exists public.user_quran_bookmarks
+  add constraint user_quran_bookmarks_user_id_fkey
+  foreign key (user_id) references auth.users (id) on delete cascade;
 
 create index if not exists idx_user_quran_bookmarks_user_id on public.user_quran_bookmarks (user_id);
 
@@ -186,7 +397,8 @@ alter table public.user_reminders enable row level security;
 alter table public.user_quran_last_read enable row level security;
 alter table public.user_quran_bookmarks enable row level security;
 
--- Public read for content tables (anon + authenticated)
+-- Public read for content tables
+
 drop policy if exists quran_surahs_read_all on public.quran_surahs;
 create policy quran_surahs_read_all
 on public.quran_surahs
@@ -222,7 +434,8 @@ for select
 to anon, authenticated
 using (true);
 
--- Per-user access policies for sync tables
+-- Per-user access policies
+
 drop policy if exists user_settings_owner_all on public.user_settings;
 create policy user_settings_owner_all
 on public.user_settings
@@ -317,3 +530,5 @@ using (
   bucket_id = 'avatars'
   and (storage.foldername(name))[1] = auth.uid()::text
 );
+
+commit;
