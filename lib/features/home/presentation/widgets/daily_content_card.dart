@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
@@ -61,8 +62,8 @@ class _DailyContentCardState extends State<DailyContentCard> {
                 children: [
                   Text(
                     ayah.content,
-                    style: const TextStyle(
-                      fontSize: 20,
+                    style: GoogleFonts.amiri(
+                      fontSize: 28,
                       height: 1.6,
                       color: AppColors.textWhite,
                       fontWeight: FontWeight.bold,

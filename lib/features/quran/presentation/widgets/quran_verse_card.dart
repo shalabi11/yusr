@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
@@ -48,9 +49,9 @@ class QuranVerseCard extends StatelessWidget {
           Text(
             verse.textAr,
             textAlign: TextAlign.right,
-            style: const TextStyle(
+            style: GoogleFonts.amiri(
               color: AppColors.textWhite,
-              fontSize: 22,
+              fontSize: 28,
               height: 1.8,
             ),
           ),
