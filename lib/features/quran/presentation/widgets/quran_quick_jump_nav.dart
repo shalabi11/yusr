@@ -31,13 +31,19 @@ Future<void> goToSurahJump({
       parentContext,
     ).push(MaterialPageRoute(builder: (_) => QuranReaderScreen(surah: surah)));
   } else {
-    final pages = await repo.pagesForSurah(surahNumber);
-    if (!parentContext.mounted || pages.isEmpty) return;
+    int? initialPage = surah.verses.isEmpty ? null : surah.verses.first.page;
+    if (initialPage == null || initialPage < 1 || initialPage > 604) {
+      final pages = await repo.pagesForSurah(surahNumber);
+      if (!parentContext.mounted || pages.isEmpty) return;
+      initialPage = pages.first;
+    }
+
+    final targetPage = initialPage;
+    if (!parentContext.mounted) return;
     await Navigator.of(parentContext).push(
       MaterialPageRoute(
         builder: (_) => QuranPageViewerScreen(
-          initialPage: pages.first,
-          pages: pages,
+          initialPage: targetPage,
           showPageTitle: false,
         ),
       ),

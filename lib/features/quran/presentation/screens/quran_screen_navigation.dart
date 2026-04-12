@@ -1,6 +1,6 @@
 part of 'quran_screen.dart';
 
-extension QuranScreenNavigation on _QuranScreenState {
+extension QuranScreenNavigation on QuranScreenState {
   Future<void> openLastRead(bool readAsText) async {
     if (_lastRead == null) {
       if (!mounted) return;

@@ -1,6 +1,6 @@
 part of 'quran_screen.dart';
 
-extension QuranScreenUi on _QuranScreenState {
+extension QuranScreenUi on QuranScreenState {
   Widget buildQuranBody(bool readAsText) {
     if (_loading) {
       return const Center(

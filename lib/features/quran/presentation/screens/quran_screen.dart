@@ -25,10 +25,10 @@ class QuranScreen extends StatefulWidget {
   const QuranScreen({super.key});
 
   @override
-  State<QuranScreen> createState() => _QuranScreenState();
+  State<QuranScreen> createState() => QuranScreenState();
 }
 
-class _QuranScreenState extends State<QuranScreen>
+class QuranScreenState extends State<QuranScreen>
     with SingleTickerProviderStateMixin {
   final QuranRepository _repo = sl<QuranRepository>();
   late final TabController _tabController;

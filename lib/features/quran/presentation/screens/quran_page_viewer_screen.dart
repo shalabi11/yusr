@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
 import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
@@ -78,11 +79,11 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
       child: Stack(
         children: [
           Positioned(
-            top: 64,
+            // top: 1,
             left: 12,
             right: 12,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.92),
                 borderRadius: BorderRadius.circular(12),
@@ -92,11 +93,12 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'السورة: $surahName',
+                      surahName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: GoogleFonts.amiri(
                         color: AppColors.primaryDark,
+                        fontSize: 22,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -128,7 +130,7 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  'الصفحة $page',
+                  page.toString(),
                   style: const TextStyle(
                     color: AppColors.primaryDark,
                     fontWeight: FontWeight.bold,

@@ -1,6 +1,6 @@
 part of 'quran_screen.dart';
 
-extension QuranScreenActions on _QuranScreenState {
+extension QuranScreenActions on QuranScreenState {
   Future<void> loadData() async {
     final surahs = await _repo.loadSurahs();
     await _repo.syncProgressOnStartup();

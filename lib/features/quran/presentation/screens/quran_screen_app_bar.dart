@@ -1,6 +1,6 @@
 part of 'quran_screen.dart';
 
-extension QuranScreenAppBar on _QuranScreenState {
+extension QuranScreenAppBar on QuranScreenState {
   PreferredSizeWidget buildQuranAppBar(bool readAsText) {
     return AppBar(
       title: const Text('القرآن الكريم'),

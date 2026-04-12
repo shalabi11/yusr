@@ -30,14 +30,20 @@ Future<void> openSurah(
       MaterialPageRoute(builder: (_) => QuranReaderScreen(surah: surah)),
     );
   } else {
-    final pages = await repo.pagesForSurah(surah.number);
-    if (!context.mounted || pages.isEmpty) return;
+    int? initialPage = surah.verses.isEmpty ? null : surah.verses.first.page;
+    if (initialPage == null || initialPage < 1 || initialPage > 604) {
+      final pages = await repo.pagesForSurah(surah.number);
+      if (!context.mounted || pages.isEmpty) return;
+      initialPage = pages.first;
+    }
+
+    final targetPage = initialPage;
+    if (!context.mounted) return;
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => QuranPageViewerScreen(
-          initialPage: pages.first,
-          pages: pages,
+          initialPage: targetPage,
           showPageTitle: false,
         ),
       ),
