@@ -5,7 +5,7 @@ class PrayerTimeModel {
   final String asr;
   final String maghrib;
   final String isha;
-  
+
   PrayerTimeModel({
     required this.fajr,
     required this.sunrise,
