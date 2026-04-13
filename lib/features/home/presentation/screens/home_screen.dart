@@ -3,7 +3,7 @@ import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/widgets/app_radial_background.dart';
 import 'package:yusr_app/features/home/presentation/widgets/home_header.dart';
 import 'package:yusr_app/features/home/presentation/widgets/daily_content_card.dart';
-import 'package:yusr_app/features/home/presentation/widgets/service_card.dart';
+import 'package:yusr_app/features/home/presentation/widgets/home_services_carousel.dart';
 import 'package:yusr_app/features/home/presentation/widgets/next_prayer_card.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
@@ -13,6 +13,29 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final services = <ServiceItem>[
+      ServiceItem(
+        title: AppStrings.quran.tr,
+        icon: Icons.menu_book,
+        route: '/quran',
+      ),
+      ServiceItem(
+        title: AppStrings.adhkar.tr,
+        icon: Icons.auto_awesome,
+        route: '/adhkar',
+      ),
+      ServiceItem(
+        title: AppStrings.reminders.tr,
+        icon: Icons.notifications_active,
+        route: '/reminders',
+      ),
+      ServiceItem(
+        title: AppStrings.prayerTimes.tr,
+        icon: Icons.access_time,
+        route: '/prayer',
+      ),
+    ];
+
     return Scaffold(
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: FloatingActionButton.extended(
@@ -50,39 +73,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
-                  childAspectRatio: 1.1,
-                ),
-                delegate: SliverChildListDelegate([
-                  ServiceCard(
-                    title: AppStrings.quran.tr,
-                    icon: Icons.menu_book,
-                    route: '/quran',
-                  ),
-                  ServiceCard(
-                    title: AppStrings.adhkar.tr,
-                    icon: Icons.auto_awesome,
-                    route: '/adhkar',
-                  ),
-                  ServiceCard(
-                    title: AppStrings.reminders.tr,
-                    icon: Icons.notifications_active,
-                    route: '/reminders',
-                  ),
-                  ServiceCard(
-                    title: AppStrings.prayerTimes.tr,
-                    icon: Icons.access_time,
-                    route: '/prayer',
-                  ),
-                ]),
-              ),
-            ),
+            SliverToBoxAdapter(child: HomeServicesCarousel(services: services)),
             const SliverToBoxAdapter(child: SizedBox(height: 120)),
           ],
         ),

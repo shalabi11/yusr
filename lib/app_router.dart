@@ -5,7 +5,7 @@ import 'package:yusr_app/features/auth/presentation/screens/profile_screen.dart'
 import 'package:yusr_app/features/adhkar/presentation/screens/adhkar_screen.dart';
 import 'package:yusr_app/features/splash/splash_screen.dart';
 import 'package:yusr_app/features/intro/presentation/intro_screen.dart';
-import 'package:yusr_app/features/home/home_screen.dart';
+import 'package:yusr_app/features/home/presentation/screens/home_screen.dart';
 import 'package:yusr_app/features/onboarding/presentation/screens/account_onboarding_screen.dart';
 import 'package:yusr_app/features/prayer_times/presentation/screens/prayer_times_screen.dart';
 import 'package:yusr_app/features/quran/presentation/screens/quran_screen.dart';
