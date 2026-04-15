@@ -1,15 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/widgets/app_radial_background.dart';
 import 'package:yusr_app/features/home/presentation/widgets/home_header.dart';
 import 'package:yusr_app/features/home/presentation/widgets/daily_content_card.dart';
 import 'package:yusr_app/features/home/presentation/widgets/home_services_carousel.dart';
 import 'package:yusr_app/features/home/presentation/widgets/next_prayer_card.dart';
+import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  Key _dailyContentKey = UniqueKey();
+
+  Future<void> _refreshHome() async {
+    await context.read<PrayerTimesCubit>().fetchPrayerTimes(force: true);
+    if (!mounted) return;
+    setState(() {
+      _dailyContentKey = UniqueKey();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,36 +63,43 @@ class HomeScreen extends StatelessWidget {
         label: Text(AppStrings.aiAssistant.tr),
       ),
       body: AppRadialBackground(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const HomeHeader(),
-                    const SizedBox(height: 25),
-                    const NextPrayerCard(),
-                    const SizedBox(height: 25),
-                    const DailyContentCard(),
-                    const SizedBox(height: 30),
-                    Text(
-                      AppStrings.basicServices.tr,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textWhite,
+        child: RefreshIndicator(
+          onRefresh: _refreshHome,
+          color: AppColors.accent,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const HomeHeader(),
+                      const SizedBox(height: 25),
+                      const NextPrayerCard(),
+                      const SizedBox(height: 25),
+                      DailyContentCard(key: _dailyContentKey),
+                      const SizedBox(height: 30),
+                      Text(
+                        AppStrings.basicServices.tr,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textWhite,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            SliverToBoxAdapter(child: HomeServicesCarousel(services: services)),
-            const SliverToBoxAdapter(child: SizedBox(height: 120)),
-          ],
+              SliverToBoxAdapter(
+                child: HomeServicesCarousel(services: services),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            ],
+          ),
         ),
       ),
     );

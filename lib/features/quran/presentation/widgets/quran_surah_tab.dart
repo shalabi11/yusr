@@ -35,6 +35,7 @@ class QuranSurahTab extends StatelessWidget {
     }).toList();
 
     return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       itemBuilder: (_, index) {
         final surah = filtered[index];

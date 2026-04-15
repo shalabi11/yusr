@@ -29,6 +29,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _loading = value);
   }
 
+  Future<void> _refreshProfile() async {
+    _loadUser();
+    if (!mounted) return;
+    setState(() {});
+  }
+
   Future<void> _changeAvatar() async {
     final pickedFile = await _imagePicker.pickImage(
       source: ImageSource.gallery,
@@ -169,44 +175,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: AppRadialBackground(
         child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 100),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: AuthGlassCard(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ProfileUserAvatar(
-                      avatarUrl: _avatarUrl,
-                      loading: _loading,
-                      onTap: _changeAvatar,
-                    ),
-                    const SizedBox(height: 24),
-                    ProfileUserNameText(
-                      isAnonymous: _isAnonymous,
-                      username: _username,
-                      email: _email,
-                    ),
-                    const SizedBox(height: 32),
-                    if (_isAnonymous) ...[
-                      ProfileGuestActions(
-                        onSignIn: () {
-                          Navigator.pushNamed(context, '/auth');
-                        },
-                      ),
-                    ] else ...[
-                      ProfileEditButton(
+          child: RefreshIndicator(
+            onRefresh: _refreshProfile,
+            color: AppColors.accent,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 100),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: AuthGlassCard(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ProfileUserAvatar(
+                        avatarUrl: _avatarUrl,
                         loading: _loading,
-                        onPressed: _editProfile,
+                        onTap: _changeAvatar,
                       ),
-                      const SizedBox(height: 12),
-                      ProfileSignOutButton(
-                        loading: _loading,
-                        onPressed: _logout,
+                      const SizedBox(height: 24),
+                      ProfileUserNameText(
+                        isAnonymous: _isAnonymous,
+                        username: _username,
+                        email: _email,
                       ),
+                      const SizedBox(height: 32),
+                      if (_isAnonymous) ...[
+                        ProfileGuestActions(
+                          onSignIn: () {
+                            Navigator.pushNamed(context, '/auth');
+                          },
+                        ),
+                      ] else ...[
+                        ProfileEditButton(
+                          loading: _loading,
+                          onPressed: _editProfile,
+                        ),
+                        const SizedBox(height: 12),
+                        ProfileSignOutButton(
+                          loading: _loading,
+                          onPressed: _logout,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),

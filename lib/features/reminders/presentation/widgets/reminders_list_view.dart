@@ -9,6 +9,7 @@ class RemindersListView extends StatelessWidget {
     required this.onDelete,
     required this.onToggle,
     required this.onTimeChanged,
+    this.onRefresh,
     super.key,
   });
 
@@ -17,10 +18,12 @@ class RemindersListView extends StatelessWidget {
   final Future<void> Function(ReminderModel reminder, bool enabled) onToggle;
   final Future<void> Function(ReminderModel reminder, TimeOfDay time)
   onTimeChanged;
+  final Future<void> Function()? onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    final list = ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(20),
       itemCount: reminders.length,
       itemBuilder: (context, index) {
@@ -60,6 +63,15 @@ class RemindersListView extends StatelessWidget {
           ),
         );
       },
+    );
+
+    if (onRefresh == null) {
+      return list;
+    }
+
+    return RefreshIndicator(
+      onRefresh: onRefresh!,
+      child: list,
     );
   }
 }

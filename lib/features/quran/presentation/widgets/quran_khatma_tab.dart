@@ -26,6 +26,7 @@ class QuranKhatmaTab extends StatelessWidget {
         .toDouble();
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       children: [
         GlassContainer(

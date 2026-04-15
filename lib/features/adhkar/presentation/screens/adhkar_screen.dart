@@ -30,10 +30,18 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
 
   Future<void> _load() async {
     final data = await _repo.loadCategories();
+    if (!mounted) return;
     setState(() {
       _categories = data;
       _loading = false;
     });
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _loading = true;
+    });
+    await _load();
   }
 
   Future<void> _addCategoryReminder(AdhkarCategory category) async {
@@ -65,21 +73,36 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
         iconTheme: const IconThemeData(color: AppColors.textWhite),
       ),
       body: AppRadialBackground(
-        child: _loading
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.accent),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _categories.length,
-                itemBuilder: (context, index) {
-                  final category = _categories[index];
-                  return AdhkarCategoryCard(
-                    category: category,
-                    onAddReminder: () => _addCategoryReminder(category),
-                  );
-                },
-              ),
+        child: RefreshIndicator(
+          onRefresh: _refresh,
+          color: AppColors.accent,
+          child: _loading
+              ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(
+                      height: 360,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.accent,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _categories.length,
+                  itemBuilder: (context, index) {
+                    final category = _categories[index];
+                    return AdhkarCategoryCard(
+                      category: category,
+                      onAddReminder: () => _addCategoryReminder(category),
+                    );
+                  },
+                ),
+        ),
       ),
     );
   }

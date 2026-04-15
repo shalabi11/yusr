@@ -60,36 +60,56 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         child: BlocBuilder<PrayerTimesCubit, PrayerTimesState>(
           builder: (context, state) {
             if (state is PrayerTimesLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppColors.accent),
+              return RefreshIndicator(
+                onRefresh: _refresh,
+                color: AppColors.accent,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(
+                      height: 420,
+                      child: Center(
+                        child: CircularProgressIndicator(color: AppColors.accent),
+                      ),
+                    ),
+                  ],
+                ),
               );
             }
             if (state is PrayerTimesError) {
-              return Center(
-                child: Padding(
+              return RefreshIndicator(
+                onRefresh: _refresh,
+                color: AppColors.accent,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.all(20),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: AppColors.accent,
-                        size: 42,
+                  children: [
+                    SizedBox(
+                      height: 420,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: AppColors.accent,
+                            size: 42,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            state.message,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: AppColors.textWhite),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: _refresh,
+                            icon: const Icon(Icons.refresh),
+                            label: Text(AppStrings.refreshNow.tr),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        state.message,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: AppColors.textWhite),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: _refresh,
-                        icon: const Icon(Icons.refresh),
-                        label: Text(AppStrings.refreshNow.tr),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               );
             }

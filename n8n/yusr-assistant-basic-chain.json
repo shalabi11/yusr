@@ -1,0 +1,529 @@
+{
+  "name": "Yusr Assistant Basic Chain",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "yusr-assistant",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        120,
+        240
+      ],
+      "webhookId": "yusr-assistant-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "const body = $json.body ?? {};\nconst history = Array.isArray(body.history) ? body.history : [];\nconst userMessage = (body.message ?? '').toString().trim();\nconst conversationId = (body.conversation_id ?? `conv_${Date.now()}`).toString();\n\nconst systemPrompt = `You are Yusr Assistant for an Islamic app.\n- Understand colloquial Arabic.\n- Return JSON only.\n- Never execute actions yourself.\n- Types: answer, ask_for_missing_info, action_proposal, action_ready.\n- For reminder actions ensure title,type,hour,minute,repeat are complete.\n- If missing data ask clearly in Arabic.\n- If complete but not confirmed return action_proposal.\n- If user confirmed (yes/نعم/أكيد/نفذ) return action_ready.`;\n\nconst historyText = history\n  .filter((item) => item && item.text)\n  .map((item) => `${item.role === 'assistant' ? 'assistant' : 'user'}: ${item.text.toString()}`)\n  .join('\\n');\n\nconst llmPrompt = [\n  systemPrompt,\n  historyText ? `Conversation history:\\n${historyText}` : '',\n  `Current user message:\\n${userMessage}`,\n  'Return valid JSON only.'\n].filter(Boolean).join('\\n\\n');\n\nreturn [{\n  json: {\n    user_id: (body.user_id ?? '').toString(),\n    locale: (body.locale ?? 'ar').toString(),\n    timezone: (body.timezone ?? 'Asia/Riyadh').toString(),\n    user_message: userMessage,\n    conversation_id: conversationId,\n    llm_prompt: llmPrompt,\n  },\n}];"
+      },
+      "id": "2",
+      "name": "Prepare Input",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        360,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.llm_prompt}}"
+      },
+      "id": "3",
+      "name": "Basic LLM Chain",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        600,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const source = $items('Prepare Input', 0, 0)[0].json;\nconst raw = $json?.text ?? $json?.response?.text ?? $json;\n\nlet parsed;\nif (typeof raw === 'string') {\n  try {\n    parsed = JSON.parse(raw);\n  } catch (e) {\n    parsed = {\n      type: 'answer',\n      reply_text: 'حدث خطأ في تحليل رد المساعد. حاول مرة أخرى.',\n      intent: 'general_question',\n    };\n  }\n} else if (raw && typeof raw === 'object') {\n  parsed = raw;\n} else {\n  parsed = {\n    type: 'answer',\n    reply_text: 'حدث خطأ في تحليل رد المساعد. حاول مرة أخرى.',\n    intent: 'general_question',\n  };\n}\n\nconst allowedTypes = new Set(['answer', 'ask_for_missing_info', 'action_proposal', 'action_ready']);\nif (!allowedTypes.has(parsed.type)) {\n  parsed.type = 'answer';\n}\n\nreturn [{\n  json: {\n    ...parsed,\n    conversation_id: parsed.conversation_id ?? source.conversation_id,\n    user_id: source.user_id,\n    user_message: source.user_message,\n  },\n}];"
+      },
+      "id": "4",
+      "name": "Parse LLM JSON",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        840,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{$json.type}}",
+        "rules": [
+          {
+            "operation": "equal",
+            "value2": "answer"
+          },
+          {
+            "operation": "equal",
+            "value2": "ask_for_missing_info"
+          },
+          {
+            "operation": "equal",
+            "value2": "action_proposal"
+          },
+          {
+            "operation": "equal",
+            "value2": "action_ready"
+          }
+        ]
+      },
+      "id": "5",
+      "name": "Switch By Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        1080,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{$json.action?.name || ''}}",
+        "rules": [
+          {
+            "operation": "equal",
+            "value2": "add_reminder"
+          },
+          {
+            "operation": "equal",
+            "value2": "update_reminder"
+          },
+          {
+            "operation": "equal",
+            "value2": "delete_reminder"
+          }
+        ]
+      },
+      "id": "6",
+      "name": "Switch Action Name",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "create",
+        "tableId": "reminders",
+        "dataToSend": "defineBelow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{$json.user_id}}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{$json.action?.data?.title}}"
+            },
+            {
+              "fieldId": "type",
+              "fieldValue": "={{$json.action?.data?.type}}"
+            },
+            {
+              "fieldId": "hour",
+              "fieldValue": "={{$json.action?.data?.hour}}"
+            },
+            {
+              "fieldId": "minute",
+              "fieldValue": "={{$json.action?.data?.minute}}"
+            },
+            {
+              "fieldId": "repeat",
+              "fieldValue": "={{$json.action?.data?.repeat}}"
+            },
+            {
+              "fieldId": "enabled",
+              "fieldValue": "={{$json.action?.data?.enabled ?? true}}"
+            }
+          ]
+        }
+      },
+      "id": "7",
+      "name": "Execute Add Reminder",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        320
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "functionCode": "const source = $items('Switch Action Name', 0, 0)[0].json;\n\nif ($json.error) {\n  return [{\n    json: {\n      ...source,\n      type: 'action_ready',\n      executed: false,\n      reply_text: 'تعذر تنفيذ إضافة التذكير على قاعدة البيانات.',\n      db_error: $json.error,\n    },\n  }];\n}\n\nreturn [{\n  json: {\n    ...source,\n    type: 'action_ready',\n    executed: true,\n    reply_text: source.reply_text ?? 'تمت إضافة التذكير بنجاح.',\n    db_result: $json,\n  },\n}];"
+      },
+      "id": "8",
+      "name": "Finalize Add Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1800,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "tableId": "reminders",
+        "filterType": "string",
+        "filterString": "={{`id=eq.${$json.action?.data?.id || ''}&user_id=eq.${$json.user_id}`}}",
+        "dataToSend": "defineBelow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "title",
+              "fieldValue": "={{$json.action?.data?.title}}"
+            },
+            {
+              "fieldId": "type",
+              "fieldValue": "={{$json.action?.data?.type}}"
+            },
+            {
+              "fieldId": "hour",
+              "fieldValue": "={{$json.action?.data?.hour}}"
+            },
+            {
+              "fieldId": "minute",
+              "fieldValue": "={{$json.action?.data?.minute}}"
+            },
+            {
+              "fieldId": "repeat",
+              "fieldValue": "={{$json.action?.data?.repeat}}"
+            },
+            {
+              "fieldId": "enabled",
+              "fieldValue": "={{$json.action?.data?.enabled ?? true}}"
+            }
+          ]
+        }
+      },
+      "id": "9",
+      "name": "Execute Update Reminder",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        460
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "functionCode": "const source = $items('Switch Action Name', 1, 0)[0].json;\n\nif (!source.action?.data?.id) {\n  return [{\n    json: {\n      ...source,\n      type: 'action_ready',\n      executed: false,\n      reply_text: 'فشل التنفيذ: reminder id غير موجود للتعديل.',\n    },\n  }];\n}\n\nif ($json.error) {\n  return [{\n    json: {\n      ...source,\n      type: 'action_ready',\n      executed: false,\n      reply_text: 'تعذر تنفيذ تعديل التذكير على قاعدة البيانات.',\n      db_error: $json.error,\n    },\n  }];\n}\n\nreturn [{\n  json: {\n    ...source,\n    type: 'action_ready',\n    executed: true,\n    reply_text: source.reply_text ?? 'تم تعديل التذكير بنجاح.',\n    db_result: $json,\n  },\n}];"
+      },
+      "id": "10",
+      "name": "Finalize Update Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1800,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "delete",
+        "tableId": "reminders",
+        "filterType": "string",
+        "filterString": "={{`id=eq.${$json.action?.data?.id || ''}&user_id=eq.${$json.user_id}`}}"
+      },
+      "id": "11",
+      "name": "Execute Delete Reminder",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        600
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "functionCode": "const source = $items('Switch Action Name', 2, 0)[0].json;\n\nif (!source.action?.data?.id) {\n  return [{\n    json: {\n      ...source,\n      type: 'action_ready',\n      executed: false,\n      reply_text: 'فشل التنفيذ: reminder id غير موجود للحذف.',\n    },\n  }];\n}\n\nif ($json.error) {\n  return [{\n    json: {\n      ...source,\n      type: 'action_ready',\n      executed: false,\n      reply_text: 'تعذر تنفيذ حذف التذكير على قاعدة البيانات.',\n      db_error: $json.error,\n    },\n  }];\n}\n\nreturn [{\n  json: {\n    ...source,\n    type: 'action_ready',\n    executed: true,\n    reply_text: source.reply_text ?? 'تم حذف التذكير بنجاح.',\n    db_result: $json,\n  },\n}];"
+      },
+      "id": "12",
+      "name": "Finalize Delete Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1800,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{\n  json: {\n    ...$json,\n    type: 'action_ready',\n    executed: false,\n    reply_text: 'الإجراء المطلوب غير مدعوم حاليًا.',\n  },\n}];"
+      },
+      "id": "13",
+      "name": "Unsupported Action Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        740
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "14",
+      "name": "Respond to Flutter",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2040,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "={{$env.LLM_MODEL || 'gpt-4o-mini'}}"
+        },
+        "options": {
+          "temperature": 0.1,
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "15",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        600,
+        40
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Input": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM JSON": {
+      "main": [
+        [
+          {
+            "node": "Switch By Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch By Type": {
+      "main": [
+        [
+          {
+            "node": "Respond to Flutter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Flutter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Flutter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch Action Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Action Name": {
+      "main": [
+        [
+          {
+            "node": "Execute Add Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute Update Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute Delete Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unsupported Action Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Add Reminder": {
+      "main": [
+        [
+          {
+            "node": "Finalize Add Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Add Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Flutter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Update Reminder": {
+      "main": [
+        [
+          {
+            "node": "Finalize Update Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Update Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Flutter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Delete Reminder": {
+      "main": [
+        [
+          {
+            "node": "Finalize Delete Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Delete Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Flutter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unsupported Action Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Flutter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "assistant-basic-chain-v2",
+  "pinData": {},
+  "id": "yusr-assistant-basic-chain"
+}

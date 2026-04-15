@@ -13,6 +13,7 @@ class QuranJuzTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       itemCount: 30,
       itemBuilder: (_, index) {

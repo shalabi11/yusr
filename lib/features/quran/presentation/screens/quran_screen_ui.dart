@@ -28,26 +28,31 @@ extension QuranScreenUi on QuranScreenState {
           ),
         ),
         Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              QuranSurahTab(
-                surahs: _surahs,
-                search: _search,
-                readAsText: readAsText,
-                repo: _repo,
-                onReload: loadData,
-              ),
-              QuranJuzTab(repo: _repo, onReload: loadData),
-              const QuranPagesTab(),
-              QuranKhatmaTab(
-                lastRead: _lastRead,
-                daysController: _daysController,
-                khatmaPlan: _khatmaPlan,
-                onComputePlan: computeKhatmaPlan,
-                onScheduleReminder: scheduleKhatmaReminder,
-              ),
-            ],
+          child: RefreshIndicator(
+            onRefresh: loadData,
+            color: AppColors.accent,
+            notificationPredicate: (notification) => notification.depth >= 1,
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                QuranSurahTab(
+                  surahs: _surahs,
+                  search: _search,
+                  readAsText: readAsText,
+                  repo: _repo,
+                  onReload: loadData,
+                ),
+                QuranJuzTab(repo: _repo, onReload: loadData),
+                const QuranPagesTab(),
+                QuranKhatmaTab(
+                  lastRead: _lastRead,
+                  daysController: _daysController,
+                  khatmaPlan: _khatmaPlan,
+                  onComputePlan: computeKhatmaPlan,
+                  onScheduleReminder: scheduleKhatmaReminder,
+                ),
+              ],
+            ),
           ),
         ),
       ],

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:yusr_app/core/services/supabase/supabase_bootstrap.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/widgets/app_radial_background.dart';
+import 'package:yusr_app/features/ai_assistant/presentation/cubit/chat_cubit.dart';
+import 'package:yusr_app/features/ai_assistant/presentation/screens/chat_screen.dart';
+import 'package:yusr_app/injection_container.dart';
 
 part 'ai_assistant_entry_views.dart';
 part 'ai_assistant_entry_gate.dart';
@@ -37,6 +41,6 @@ class AIAssistantEntryScreen extends StatelessWidget {
       return buildAnonymousGate(context);
     }
 
-    return buildAssistantPlaceholder();
+    return buildAssistantChat();
   }
 }

@@ -5,6 +5,7 @@ import 'package:yusr_app/core/localization/app_translations.dart';
 import 'package:yusr_app/core/bloc/settings_cubit.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/widgets/app_radial_background.dart';
+import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
 import 'package:yusr_app/features/settings/presentation/widgets/fasting_settings_card.dart';
 import 'package:yusr_app/features/settings/presentation/widgets/language_setting_card.dart';
 import 'package:yusr_app/features/settings/presentation/widgets/prayer_settings_card.dart';
@@ -27,23 +28,34 @@ class SettingsScreen extends StatelessWidget {
         iconTheme: const IconThemeData(color: AppColors.textWhite),
       ),
       body: AppRadialBackground(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const LanguageSettingCard(),
-            const SizedBox(height: 20),
-            BlocBuilder<SettingsCubit, SettingsState>(
-              builder: (context, state) {
-                return PrayerSettingsCard(state: state);
-              },
-            ),
-            const SizedBox(height: 20),
-            BlocBuilder<SettingsCubit, SettingsState>(
-              builder: (context, state) {
-                return FastingSettingsCard(state: state);
-              },
-            ),
-          ],
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await context.read<SettingsCubit>().loadFromRemoteOnStartup();
+            if (!context.mounted) return;
+            await context.read<PrayerTimesCubit>().fetchPrayerTimes(
+              force: true,
+            );
+          },
+          color: AppColors.accent,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(20),
+            children: [
+              const LanguageSettingCard(),
+              const SizedBox(height: 20),
+              BlocBuilder<SettingsCubit, SettingsState>(
+                builder: (context, state) {
+                  return PrayerSettingsCard(state: state);
+                },
+              ),
+              const SizedBox(height: 20),
+              BlocBuilder<SettingsCubit, SettingsState>(
+                builder: (context, state) {
+                  return FastingSettingsCard(state: state);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

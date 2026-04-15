@@ -8,6 +8,7 @@ class QuranPagesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       cacheExtent: 1200,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

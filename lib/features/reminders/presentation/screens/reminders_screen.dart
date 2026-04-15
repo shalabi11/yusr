@@ -58,6 +58,7 @@ class _RemindersScreenState extends State<RemindersScreen>
       body: AppRadialBackground(
         child: RemindersListView(
           reminders: reminders,
+          onRefresh: loadAndSyncOnStart,
           onDelete: deleteReminderBySwipe,
           onToggle: (reminder, enabled) async {
             _updateReminderEnabled(reminder, enabled);
