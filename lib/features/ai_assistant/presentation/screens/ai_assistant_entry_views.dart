@@ -18,7 +18,10 @@ extension AIAssistantEntryViews on AIAssistantEntryScreen {
                     padding: EdgeInsets.all(24),
                     child: Text(
                       'المساعد الذكي غير متاح الآن لأن إعدادات Supabase غير مفعّلة.\n\nشغّل التطبيق مع SUPABASE_URL و SUPABASE_ANON_KEY عبر --dart-define.',
-                      style: TextStyle(color: AppColors.textWhite, fontSize: 16),
+                      style: TextStyle(
+                        color: AppColors.textWhite,
+                        fontSize: 16,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),

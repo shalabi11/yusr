@@ -9,7 +9,7 @@ extension AIAssistantEntryGate on AIAssistantEntryScreen {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('المساعد الذكي')),
+      appBar: AppBar(title: const Text('المساعد يُسر')),
       body: AppRadialBackground(
         child: RefreshIndicator(
           onRefresh: refreshGate,

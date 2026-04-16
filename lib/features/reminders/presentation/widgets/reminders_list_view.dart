@@ -69,9 +69,6 @@ class RemindersListView extends StatelessWidget {
       return list;
     }
 
-    return RefreshIndicator(
-      onRefresh: onRefresh!,
-      child: list,
-    );
+    return RefreshIndicator(onRefresh: onRefresh!, child: list);
   }
 }

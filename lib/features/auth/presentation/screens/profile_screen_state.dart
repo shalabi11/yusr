@@ -180,7 +180,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             color: AppColors.accent,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 100),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 100,
+              ),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 460),
                 child: AuthGlassCard(

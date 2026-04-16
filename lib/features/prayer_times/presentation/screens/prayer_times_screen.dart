@@ -69,7 +69,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                     SizedBox(
                       height: 420,
                       child: Center(
-                        child: CircularProgressIndicator(color: AppColors.accent),
+                        child: CircularProgressIndicator(
+                          color: AppColors.accent,
+                        ),
                       ),
                     ),
                   ],
