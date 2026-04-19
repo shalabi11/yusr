@@ -73,10 +73,3 @@ extension _QuranPageViewerOverlay on _QuranPageViewerScreenState {
     );
   }
 }
-
-class _PageMeta {
-  final String surahName;
-  final int juzNumber;
-
-  const _PageMeta({required this.surahName, required this.juzNumber});
-}

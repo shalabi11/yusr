@@ -3,12 +3,19 @@ part of 'quran_screen.dart';
 extension QuranScreenActions on QuranScreenState {
   Future<void> loadData() async {
     try {
-      final surahs = await _repo.loadSurahs();
-      await _repo.syncProgressOnStartup();
-      final lastRead = _repo.getLastRead();
+      final surahs = await widget.repo.loadSurahs();
+      await widget.repo.syncProgressOnStartup();
+      final lastRead = widget.repo.getLastRead();
       _applyLoadedData(surahs, lastRead);
-    } catch (_) {
-      _applyLoadedData(const <QuranSurah>[], _repo.getLastRead());
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'quran',
+        'loadData',
+        'Failed to load Quran screen data; falling back to cached state.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      _applyLoadedData(const <QuranSurah>[], widget.repo.getLastRead());
     }
   }
 

@@ -39,7 +39,14 @@ extension QuranRepositoryStartupSync on QuranRepository {
           remoteBookmarks.map((e) => e.toJson()).toList(),
         );
       }
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'quran',
+        'syncProgressOnStartup',
+        'Startup remote sync failed; local Quran progress retained.',
+        error: error,
+        stackTrace: stackTrace,
+      );
       // Keep local data as fallback if startup remote sync fails.
     }
   }

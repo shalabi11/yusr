@@ -29,6 +29,7 @@ class QuranJuzTab extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (_) => QuranPageViewerScreen(
                     initialPage: pages.first,
+                    repo: repo,
                     showPageTitle: false,
                   ),
                 ),

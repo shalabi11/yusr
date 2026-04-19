@@ -82,14 +82,15 @@ extension QuranScreenUi on QuranScreenState {
               controller: _tabController,
               children: [
                 QuranSurahTab(
-                  surahs: _surahs,
+                  surahs: _filteredSurahs,
                   search: _search,
+                  matchedPreviewBySurah: _matchedPreviewBySurah,
                   readAsText: readAsText,
-                  repo: _repo,
+                  repo: widget.repo,
                   onReload: loadData,
                 ),
-                QuranJuzTab(repo: _repo, onReload: loadData),
-                const QuranPagesTab(),
+                QuranJuzTab(repo: widget.repo, onReload: loadData),
+                QuranPagesTab(repo: widget.repo),
                 QuranKhatmaTab(
                   lastRead: _lastRead,
                   daysController: _daysController,

@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
 import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
-import 'package:yusr_app/injection_container.dart';
 
 import 'quran_page_viewer_widgets.dart';
 
@@ -16,10 +15,12 @@ class QuranPageViewerScreen extends StatefulWidget {
   final int initialPage;
   final List<int>? pages;
   final bool showPageTitle;
+  final QuranRepository repo;
 
   const QuranPageViewerScreen({
     super.key,
     required this.initialPage,
+    required this.repo,
     this.pages,
     this.showPageTitle = false,
   });
@@ -29,17 +30,21 @@ class QuranPageViewerScreen extends StatefulWidget {
 }
 
 class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
-  final QuranRepository _repo = sl<QuranRepository>();
   late final PageController _controller;
   late final List<int> _pages;
   late int _currentPage;
   bool _reverse = false;
   final Set<int> _savedPages = <int>{};
-  final Map<int, _PageMeta> _pageMetaByPage = <int, _PageMeta>{};
+  final Map<int, QuranPageMeta> _pageMetaByPage = <int, QuranPageMeta>{};
   final Map<int, String> _pageImageUrlByPage = <int, String>{};
   final Map<int, String> _localPageImagePathByPage = <int, String>{};
+  final Set<int> _prefetchedPages = <int>{};
+  final List<int> _prefetchQueue = <int>[];
 
-  void _replacePageMeta(Map<int, _PageMeta> map) {
+  static const int _maxPrefetchedPages = 8;
+  static const int _maxPrefetchDistance = 2;
+
+  void _replacePageMeta(Map<int, QuranPageMeta> map) {
     setState(() {
       _pageMetaByPage
         ..clear()
@@ -67,25 +72,65 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
     });
   }
 
-  void _precacheNextPage(int currentPage) {
-    final currentIndex = _pages.indexOf(currentPage);
-    if (currentIndex < 0 || currentIndex + 1 >= _pages.length) {
+  ImageProvider? _providerForPage(int page) {
+    final localPath = _localPageImagePathByPage[page];
+    final remoteUrl = _pageImageUrlByPage[page];
+
+    if (localPath != null && localPath.isNotEmpty) {
+      return FileImage(File(localPath));
+    }
+    if (remoteUrl != null && remoteUrl.isNotEmpty) {
+      return NetworkImage(remoteUrl);
+    }
+    return null;
+  }
+
+  void _trackPrefetch(int page) {
+    if (_prefetchedPages.contains(page)) {
       return;
     }
 
-    final nextPage = _pages[currentIndex + 1];
-    final localPath = _localPageImagePathByPage[nextPage];
-    final remoteUrl = _pageImageUrlByPage[nextPage];
+    _prefetchedPages.add(page);
+    _prefetchQueue.add(page);
 
-    ImageProvider? provider;
-    if (localPath != null && localPath.isNotEmpty) {
-      provider = FileImage(File(localPath));
-    } else if (remoteUrl != null && remoteUrl.isNotEmpty) {
-      provider = NetworkImage(remoteUrl);
+    while (_prefetchQueue.length > _maxPrefetchedPages) {
+      final oldest = _prefetchQueue.removeAt(0);
+      _prefetchedPages.remove(oldest);
+    }
+  }
+
+  void _precacheAroundPage(int currentPage) {
+    final currentIndex = _pages.indexOf(currentPage);
+    if (currentIndex < 0) {
+      return;
     }
 
-    if (provider == null) return;
-    precacheImage(provider, context);
+    final candidateIndexes = <int>{
+      currentIndex,
+      for (var offset = 1; offset <= _maxPrefetchDistance; offset++) ...[
+        currentIndex + offset,
+        currentIndex - offset,
+      ],
+    };
+
+    for (final candidateIndex in candidateIndexes) {
+      if (candidateIndex < 0 || candidateIndex >= _pages.length) {
+        continue;
+      }
+
+      final page = _pages[candidateIndex];
+      if (_prefetchedPages.contains(page)) {
+        continue;
+      }
+
+      final provider = _providerForPage(page);
+      if (provider == null) {
+        continue;
+      }
+
+      _trackPrefetch(page);
+      precacheImage(provider, context);
+    }
   }
 
   @override
@@ -99,33 +144,33 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
         : _pages.first;
     _currentPage = initial;
     _controller = PageController(initialPage: _pages.indexOf(initial));
-    final bookmarks = _repo.getBookmarks();
+    final bookmarks = widget.repo.getBookmarks();
     _savedPages
       ..clear()
       ..addAll(bookmarks.map((b) => b.pageNumber));
-    final lastReadPage = _repo.getLastRead()?.pageNumber;
+    final lastReadPage = widget.repo.getLastRead()?.pageNumber;
     if (lastReadPage != null) _savedPages.add(lastReadPage);
     _loadPageMetaByPage();
     _loadLocalPageImages();
     _loadRemotePageImages();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _precacheNextPage(_currentPage);
+      _precacheAroundPage(_currentPage);
     });
   }
 
   Future<void> _loadLocalPageImages() async {
-    final map = await _repo.loadLocalPageImagePaths();
+    final map = await widget.repo.loadLocalPageImagePaths();
     if (!mounted || map.isEmpty) return;
     _replaceLocalPageImagePaths(map);
-    _precacheNextPage(_currentPage);
+    _precacheAroundPage(_currentPage);
   }
 
   Future<void> _loadRemotePageImages() async {
-    final map = await _repo.loadPageImageUrls();
+    final map = await widget.repo.loadPageImageUrls();
     if (!mounted || map.isEmpty) return;
     _replacePageImageUrls(map);
-    _precacheNextPage(_currentPage);
+    _precacheAroundPage(_currentPage);
   }
 
   @override
@@ -156,7 +201,7 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
             onPageChanged: (index) {
               final page = _pages[index];
               setState(() => _currentPage = page);
-              _precacheNextPage(page);
+              _precacheAroundPage(page);
             },
             itemBuilder: (context, index) {
               final page = _pages[index];

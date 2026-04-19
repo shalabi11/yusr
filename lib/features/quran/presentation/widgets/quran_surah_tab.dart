@@ -10,6 +10,7 @@ class QuranSurahTab extends StatelessWidget {
   const QuranSurahTab({
     required this.surahs,
     required this.search,
+    required this.matchedPreviewBySurah,
     required this.readAsText,
     required this.repo,
     required this.onReload,
@@ -18,27 +19,18 @@ class QuranSurahTab extends StatelessWidget {
 
   final List<QuranSurah> surahs;
   final String search;
+  final Map<int, String> matchedPreviewBySurah;
   final bool readAsText;
   final QuranRepository repo;
   final Future<void> Function() onReload;
 
   @override
   Widget build(BuildContext context) {
-    final filtered = surahs.where((s) {
-      if (search.isEmpty) return true;
-      final q = search.toLowerCase();
-      final hasAyahMatch = s.verses.any((v) => v.textAr.contains(search));
-      return s.nameAr.contains(search) ||
-          s.nameEn.toLowerCase().contains(q) ||
-          s.number.toString().contains(q) ||
-          hasAyahMatch;
-    }).toList();
-
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       itemBuilder: (_, index) {
-        final surah = filtered[index];
+        final surah = surahs[index];
         return InkWell(
           onTap: () => openSurah(
             context,
@@ -77,7 +69,11 @@ class QuranSurahTab extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        buildSurahSubtitle(surah, search),
+                        buildSurahSubtitle(
+                          surah,
+                          search,
+                          matchedPreviewBySurah[surah.number],
+                        ),
                         style: TextStyle(
                           color: AppColors.textWhite.withValues(alpha: 0.7),
                         ),
@@ -92,7 +88,7 @@ class QuranSurahTab extends StatelessWidget {
         );
       },
       separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemCount: filtered.length,
+      itemCount: surahs.length,
     );
   }
 }

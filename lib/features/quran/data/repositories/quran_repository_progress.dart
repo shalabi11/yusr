@@ -8,7 +8,14 @@ extension QuranRepositoryProgress on QuranRepository {
     );
     try {
       await _remoteSync?.saveLastRead(lastRead);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'quran',
+        'saveLastRead',
+        'Remote last-read sync failed; local value retained.',
+        error: error,
+        stackTrace: stackTrace,
+      );
       // Keep local data as fallback if remote sync fails.
     }
   }
@@ -60,7 +67,14 @@ extension QuranRepositoryProgress on QuranRepository {
     );
     try {
       await _remoteSync?.saveBookmarks(bookmarks);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'quran',
+        'addBookmark',
+        'Remote bookmark sync failed; local bookmarks retained.',
+        error: error,
+        stackTrace: stackTrace,
+      );
       // Keep local data as fallback if remote sync fails.
     }
     await saveLastRead(bookmarkData);
@@ -75,7 +89,14 @@ extension QuranRepositoryProgress on QuranRepository {
     );
     try {
       await _remoteSync?.saveBookmarks(bookmarks);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'quran',
+        'removeBookmark',
+        'Remote bookmark delete sync failed; local bookmarks retained.',
+        error: error,
+        stackTrace: stackTrace,
+      );
       // Keep local data as fallback if remote sync fails.
     }
   }

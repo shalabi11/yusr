@@ -34,9 +34,11 @@ Future<void> goToSurahJump({
     orElse: () => surahs.first,
   );
   if (readAsText) {
-    await Navigator.of(
-      parentContext,
-    ).push(MaterialPageRoute(builder: (_) => QuranReaderScreen(surah: surah)));
+    await Navigator.of(parentContext).push(
+      MaterialPageRoute(
+        builder: (_) => QuranReaderScreen(surah: surah, repo: repo),
+      ),
+    );
   } else {
     int? initialPage = surah.verses.isEmpty ? null : surah.verses.first.page;
     if (initialPage == null || initialPage < 1 || initialPage > 604) {
@@ -51,6 +53,7 @@ Future<void> goToSurahJump({
       MaterialPageRoute(
         builder: (_) => QuranPageViewerScreen(
           initialPage: targetPage,
+          repo: repo,
           showPageTitle: false,
         ),
       ),
@@ -84,6 +87,7 @@ Future<void> goToJuzJump({
     MaterialPageRoute(
       builder: (_) => QuranPageViewerScreen(
         initialPage: pages.first,
+        repo: repo,
         pages: pages,
         showPageTitle: false,
       ),
@@ -97,6 +101,7 @@ Future<void> goToJuzJump({
 Future<void> goToPageJump({
   required BuildContext sheetContext,
   required BuildContext parentContext,
+  required QuranRepository repo,
   required Future<void> Function() onReload,
   required String input,
 }) async {
@@ -111,8 +116,11 @@ Future<void> goToPageJump({
 
   await Navigator.of(parentContext).push(
     MaterialPageRoute(
-      builder: (_) =>
-          QuranPageViewerScreen(initialPage: page, showPageTitle: false),
+      builder: (_) => QuranPageViewerScreen(
+        initialPage: page,
+        repo: repo,
+        showPageTitle: false,
+      ),
     ),
   );
 

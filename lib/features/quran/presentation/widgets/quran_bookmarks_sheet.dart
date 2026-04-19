@@ -70,13 +70,16 @@ class _QuranBookmarksSheetState extends State<QuranBookmarksSheet> {
         orElse: () => widget.surahs.first,
       );
       await Navigator.of(widget.parentContext).push(
-        MaterialPageRoute(builder: (_) => QuranReaderScreen(surah: surah)),
+        MaterialPageRoute(
+          builder: (_) => QuranReaderScreen(surah: surah, repo: widget.repo),
+        ),
       );
     } else {
       await Navigator.of(widget.parentContext).push(
         MaterialPageRoute(
           builder: (_) => QuranPageViewerScreen(
             initialPage: bookmark.pageNumber,
+            repo: widget.repo,
             showPageTitle: false,
           ),
         ),

@@ -5,20 +5,18 @@ import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
 import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
 import 'package:yusr_app/features/quran/presentation/widgets/quran_verse_card.dart';
-import 'package:yusr_app/injection_container.dart';
 
 class QuranReaderScreen extends StatefulWidget {
   final QuranSurah surah;
+  final QuranRepository repo;
 
-  const QuranReaderScreen({super.key, required this.surah});
+  const QuranReaderScreen({super.key, required this.surah, required this.repo});
 
   @override
   State<QuranReaderScreen> createState() => _QuranReaderScreenState();
 }
 
 class _QuranReaderScreenState extends State<QuranReaderScreen> {
-  final QuranRepository _repo = sl<QuranRepository>();
-
   String _formatRange(List<int> values) {
     if (values.isEmpty) return '-';
     final sorted = values.toSet().toList()..sort();
@@ -65,7 +63,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       pageNumber: verse.page,
       juzNumber: verse.juz,
     );
-    await _repo.addBookmark(data);
+    await widget.repo.addBookmark(data);
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,

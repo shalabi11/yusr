@@ -11,7 +11,20 @@ extension QuranRepositoryCatalog on QuranRepository {
           await _catalogRemote?.loadPageImageUrls() ?? const <int, String>{};
       QuranRepository._cachedPageImageUrls = remote;
       return QuranRepository._cachedPageImageUrls!;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'quran',
+        'loadPageImageUrls',
+        'Failed to load remote page image urls, using empty cache.',
+        error: error,
+      );
+      AppLogger.error(
+        'quran',
+        'loadPageImageUrls',
+        'Stack trace for remote page image urls failure.',
+        error: error,
+        stackTrace: stackTrace,
+      );
       QuranRepository._cachedPageImageUrls = const <int, String>{};
       return QuranRepository._cachedPageImageUrls!;
     }
@@ -41,7 +54,20 @@ extension QuranRepositoryCatalog on QuranRepository {
   Future<List<QuranSurah>> _loadSurahsFromRemote() async {
     try {
       return await _catalogRemote?.loadSurahs() ?? const [];
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'quran',
+        'loadSurahsFromRemote',
+        'Remote catalog load failed, falling back to local sources.',
+        error: error,
+      );
+      AppLogger.error(
+        'quran',
+        'loadSurahsFromRemote',
+        'Stack trace for remote surah load failure.',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return const [];
     }
   }
@@ -144,51 +170,85 @@ extension QuranRepositoryCatalog on QuranRepository {
       }
       final raw = await file.readAsString();
       return compute(_parseQuranSurahs, raw);
-    } catch (_) {
+    } catch (error) {
+      AppLogger.warning(
+        'quran',
+        'parseSurahsFromFile',
+        'Failed to parse local surah file, skipping file.',
+        error: error,
+        payloadId: file.path,
+      );
       return const [];
     }
   }
 
-  Future<List<int>> pagesForJuz(int juz) async {
-    final surahs = await loadSurahs();
-    final pages = <int>{};
-    for (final surah in surahs) {
-      for (final verse in surah.verses) {
-        if (verse.juz == juz) {
-          pages.add(verse.page);
-        }
-      }
+  Future<void> _ensureIndexes() async {
+    if (QuranRepository._cachedPagesByJuz != null &&
+        QuranRepository._cachedPagesBySurah != null &&
+        QuranRepository._cachedLastReadByPage != null &&
+        QuranRepository._cachedPageMetaByPage != null) {
+      return;
     }
-    final sorted = pages.toList()..sort();
-    return sorted;
+
+    final surahs = await loadSurahs();
+    final pagesByJuz = <int, Set<int>>{};
+    final pagesBySurah = <int, Set<int>>{};
+    final lastReadByPage = <int, QuranLastRead>{};
+    final pageMetaByPage = <int, QuranPageMeta>{};
+
+    for (final surah in surahs) {
+      final surahPages = <int>{};
+      for (final verse in surah.verses) {
+        surahPages.add(verse.page);
+        pagesByJuz.putIfAbsent(verse.juz, () => <int>{}).add(verse.page);
+        pageMetaByPage.putIfAbsent(
+          verse.page,
+          () => QuranPageMeta(surahName: surah.nameAr, juzNumber: verse.juz),
+        );
+        lastReadByPage.putIfAbsent(
+          verse.page,
+          () => QuranLastRead(
+            surahNumber: surah.number,
+            verseNumber: verse.number,
+            pageNumber: verse.page,
+            juzNumber: verse.juz,
+          ),
+        );
+      }
+      pagesBySurah[surah.number] = surahPages;
+    }
+
+    QuranRepository._cachedPagesByJuz = {
+      for (final entry in pagesByJuz.entries)
+        entry.key: (entry.value.toList()..sort()),
+    };
+    QuranRepository._cachedPagesBySurah = {
+      for (final entry in pagesBySurah.entries)
+        entry.key: (entry.value.toList()..sort()),
+    };
+    QuranRepository._cachedLastReadByPage = lastReadByPage;
+    QuranRepository._cachedPageMetaByPage = pageMetaByPage;
+  }
+
+  Future<List<int>> pagesForJuz(int juz) async {
+    await _ensureIndexes();
+    return QuranRepository._cachedPagesByJuz?[juz] ?? const <int>[];
   }
 
   Future<List<int>> pagesForSurah(int surahNumber) async {
-    final surahs = await loadSurahs();
-    final surah = surahs.firstWhere(
-      (s) => s.number == surahNumber,
-      orElse: () => surahs.first,
-    );
+    await _ensureIndexes();
+    return QuranRepository._cachedPagesBySurah?[surahNumber] ?? const <int>[];
+  }
 
-    final pages = surah.verses.map((v) => v.page).toSet().toList()..sort();
-    return pages;
+  Future<Map<int, QuranPageMeta>> loadPageMetaByPage() async {
+    await _ensureIndexes();
+    return QuranRepository._cachedPageMetaByPage ??
+        const <int, QuranPageMeta>{};
   }
 
   Future<QuranLastRead?> getLastReadForPage(int page) async {
-    final surahs = await loadSurahs();
-    for (final surah in surahs) {
-      for (final verse in surah.verses) {
-        if (verse.page == page) {
-          return QuranLastRead(
-            surahNumber: surah.number,
-            verseNumber: verse.number,
-            pageNumber: page,
-            juzNumber: verse.juz,
-          );
-        }
-      }
-    }
-    return null;
+    await _ensureIndexes();
+    return QuranRepository._cachedLastReadByPage?[page];
   }
 
   KhatmaPlan calculateKhatmaPlan(int days) {

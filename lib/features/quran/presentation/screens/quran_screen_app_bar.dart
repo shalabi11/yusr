@@ -19,8 +19,9 @@ extension QuranScreenAppBar on QuranScreenState {
             await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const QuranPageViewerScreen(
+                builder: (_) => QuranPageViewerScreen(
                   initialPage: 1,
+                  repo: widget.repo,
                   showPageTitle: false,
                 ),
               ),

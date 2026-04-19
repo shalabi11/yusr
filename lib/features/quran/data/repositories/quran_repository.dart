@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:yusr_app/core/utils/app_logger.dart';
 import 'package:yusr_app/core/services/storage_service.dart';
 import 'package:yusr_app/features/content_download/domain/entities/download_content_type.dart';
 
@@ -30,6 +31,10 @@ class QuranRepository {
   static List<QuranSurah>? _cachedSurahs;
   static Map<int, String>? _cachedPageImageUrls;
   static Map<int, String>? _cachedLocalPageImagePaths;
+  static Map<int, List<int>>? _cachedPagesByJuz;
+  static Map<int, List<int>>? _cachedPagesBySurah;
+  static Map<int, QuranLastRead>? _cachedLastReadByPage;
+  static Map<int, QuranPageMeta>? _cachedPageMetaByPage;
 
   final QuranRemoteSyncService? _remoteSync;
   final QuranCatalogRemoteService? _catalogRemote;

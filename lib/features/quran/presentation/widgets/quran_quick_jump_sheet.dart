@@ -71,6 +71,7 @@ class _QuranQuickJumpSheetState extends State<QuranQuickJumpSheet> {
       onGoToPage: () => goToPageJump(
         sheetContext: context,
         parentContext: widget.parentContext,
+        repo: widget.repo,
         onReload: widget.onReload,
         input: _pageController.text,
       ),
