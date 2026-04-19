@@ -1,0 +1,359 @@
+{
+  "name": "Yusr Assistant Tools Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "yusr-assistant-tools",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-tools",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "yusr-assistant-webhook-tools"
+    },
+    {
+      "parameters": {
+        "functionCode": "const body = $json.body ?? {};\nconst userMessage = (body.message ?? '').toString().trim();\nconst conversationId = (body.conversation_id ?? `conv_${Date.now()}`).toString();\n\nreturn [{\n  json: {\n    user_id: (body.user_id ?? '').toString(),\n    locale: (body.locale ?? 'ar').toString(),\n    timezone: (body.timezone ?? 'Asia/Riyadh').toString(),\n    user_message: userMessage,\n    conversation_id: conversationId\n  }\n}];"
+      },
+      "id": "prepare-input",
+      "name": "Prepare Input",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.user_message }}",
+        "options": {
+          "systemMessage": "==========\nSYSTEM PROMPT START\n==========\nYou are Yusr Assistant, a helpful AI for an Islamic app.\nYou MUST respond in clear, friendly Arabic.\nThe current user_id is: {{ $json.user_id }}\n\nYou have tools available to manage the user's reminders in the `user_reminders` database table.\nALWAYS include the `user_id` in your tool calls exactly as provided above.\n\nBEFORE deleting or updating a reminder:\n1. First call `get_reminders` to check if a matching reminder exists.\n2. If not found, inform the user politely that no such reminder exists.\n\nWhen a tool call succeeds, summarize the action to the user in a friendly way (e.g., 'تمت إضافة تذكير النوم الساعة 11 مساءً بنجاح').\nDo NOT return raw JSON to the user; just converse naturally.\n==========\nSYSTEM PROMPT END\n=========="
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "ai-agent",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "name": "add_reminder",
+        "description": "Adds a new reminder to the database. Requires a JSON string with: title (string), hour (0-23, number), minute (0-59, number), user_id (string). Optional: frequency ('daily' or 'weekly_friday'), weekday (number 1-7).",
+        "jsCode": "const params = JSON.parse($input.first().json.query);\nif (!params.user_id) return 'Error: missing user_id';\nif (!params.title || params.hour === undefined || params.minute === undefined) return 'Error: missing title, hour, or minute';\n\nconst time_of_day = String(params.hour).padStart(2,'0') + ':' + String(params.minute).padStart(2,'0') + ':00';\n\ntry {\n  const response = await this.helpers.httpRequest({\n    method: 'POST',\n    url: 'https://jdfkndqfytvylbtyfivw.supabase.co/rest/v1/user_reminders',\n    headers: {\n      'apikey': $credentials.supabaseApi.apiKey,\n      'Authorization': `Bearer ${$credentials.supabaseApi.apiKey}`,\n      'Content-Type': 'application/json',\n      'Prefer': 'return=representation'\n    },\n    body: {\n      user_id: params.user_id,\n      title: params.title,\n      subtitle: params.title,\n      frequency: params.frequency || 'daily',\n      time_of_day: time_of_day,\n      weekday: params.weekday || null,\n      enabled: true,\n      icon_code_point: 0\n    }\n  });\n  return `Success! Reminder added. ID: ${response[0]?.id}`;\n} catch (error) {\n  return `Database Error: ${error.message}`;\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        600,
+        200
+      ],
+      "id": "tool-add-reminder",
+      "name": "Add Reminder Tool",
+      "credentials": {
+        "supabaseApi": {
+          "id": "24axCyOQciRhSpOQ",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "get_reminders",
+        "description": "Gets the list of current reminders for the user. Requires a JSON string with: user_id (string). Call this before updating or deleting to find the correct reminder ID or title.",
+        "jsCode": "const params = JSON.parse($input.first().json.query);\nif (!params.user_id) return 'Error: missing user_id';\n\ntry {\n  const response = await this.helpers.httpRequest({\n    method: 'GET',\n    url: `https://jdfkndqfytvylbtyfivw.supabase.co/rest/v1/user_reminders?select=id,title,time_of_day,frequency&user_id=eq.${params.user_id}`,\n    headers: {\n      'apikey': $credentials.supabaseApi.apiKey,\n      'Authorization': `Bearer ${$credentials.supabaseApi.apiKey}`,\n      'Content-Type': 'application/json'\n    }\n  });\n  if (response.length === 0) return 'No reminders found for this user.';\n  return `Found reminders: ${JSON.stringify(response)}`;\n} catch (error) {\n  return `Database Error: ${error.message}`;\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        750,
+        200
+      ],
+      "id": "tool-get-reminders",
+      "name": "Get Reminders Tool",
+      "credentials": {
+        "supabaseApi": {
+          "id": "24axCyOQciRhSpOQ",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "update_reminder",
+        "description": "Updates an existing reminder. Requires a JSON string with: id (number, the ID of the reminder), user_id (string). Plus fields to update: title, hour, minute. Call get_reminders first to get the ID.",
+        "jsCode": "const params = JSON.parse($input.first().json.query);\nif (!params.user_id || !params.id) return 'Error: missing user_id or id';\n\nlet updateBody = {};\nif (params.title) {\n  updateBody.title = params.title;\n  updateBody.subtitle = params.title;\n}\nif (params.hour !== undefined && params.minute !== undefined) {\n  updateBody.time_of_day = String(params.hour).padStart(2,'0') + ':' + String(params.minute).padStart(2,'0') + ':00';\n}\nupdateBody.updated_at = new Date().toISOString();\n\ntry {\n  const response = await this.helpers.httpRequest({\n    method: 'PATCH',\n    url: `https://jdfkndqfytvylbtyfivw.supabase.co/rest/v1/user_reminders?id=eq.${params.id}&user_id=eq.${params.user_id}`,\n    headers: {\n      'apikey': $credentials.supabaseApi.apiKey,\n      'Authorization': `Bearer ${$credentials.supabaseApi.apiKey}`,\n      'Content-Type': 'application/json',\n      'Prefer': 'return=representation'\n    },\n    body: updateBody\n  });\n  if (response.length === 0) return 'Error: Reminder not found or not owned by user';\n  return `Success! Reminder ID ${params.id} updated.`;\n} catch (error) {\n  return `Database Error: ${error.message}`;\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        900,
+        200
+      ],
+      "id": "tool-update-reminder",
+      "name": "Update Reminder Tool",
+      "credentials": {
+        "supabaseApi": {
+          "id": "24axCyOQciRhSpOQ",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "delete_reminder",
+        "description": "Deletes a reminder. Requires a JSON string with: id (number, the ID of the reminder), user_id (string). Call get_reminders first to get the ID.",
+        "jsCode": "const params = JSON.parse($input.first().json.query);\nif (!params.user_id || !params.id) return 'Error: missing user_id or id';\n\ntry {\n  const response = await this.helpers.httpRequest({\n    method: 'DELETE',\n    url: `https://jdfkndqfytvylbtyfivw.supabase.co/rest/v1/user_reminders?id=eq.${params.id}&user_id=eq.${params.user_id}`,\n    headers: {\n      'apikey': $credentials.supabaseApi.apiKey,\n      'Authorization': `Bearer ${$credentials.supabaseApi.apiKey}`,\n      'Content-Type': 'application/json',\n      'Prefer': 'return=representation'\n    }\n  });\n  if (response.length === 0) return 'Error: Reminder not found or not owned by user';\n  return `Success! Reminder ID ${params.id} deleted.`;\n} catch (error) {\n  return `Database Error: ${error.message}`;\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        200
+      ],
+      "id": "tool-delete-reminder",
+      "name": "Delete Reminder Tool",
+      "credentials": {
+        "supabaseApi": {
+          "id": "24axCyOQciRhSpOQ",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-v3.2",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        400,
+        200
+      ],
+      "id": "openrouter-model",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "uBiH0neLwDur3X7b",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search for general user context, FAQs or facts about prior conversation.",
+        "tableName": {
+          "__rl": true,
+          "value": "user_reminders",
+          "mode": "list",
+          "cachedResultName": "user_reminders"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        250,
+        400
+      ],
+      "id": "supabase-vector-store",
+      "name": "Supabase Context Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "24axCyOQciRhSpOQ",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsCohere",
+      "typeVersion": 1,
+      "position": [
+        250,
+        600
+      ],
+      "id": "cohere-embeddings",
+      "name": "Embeddings Cohere",
+      "credentials": {
+        "cohereApi": {
+          "id": "BUl61Unea2o7HEA5",
+          "name": "CohereApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.user_id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        500,
+        400
+      ],
+      "id": "simple-memory",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { type: 'answer', reply_text: $json.output } }}",
+        "options": {}
+      },
+      "id": "respond-to-flutter",
+      "name": "Respond to Flutter",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        750,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Input": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Flutter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Reminder Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Reminders Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Reminder Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Reminder Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Context Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Cohere": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Context Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f7841cc4-0000-47cf-8d5d-newtoolsversion0"
+}

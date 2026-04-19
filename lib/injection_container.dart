@@ -19,6 +19,15 @@ import 'package:yusr_app/features/ai_assistant/domain/repositories/assistant_rep
 import 'package:yusr_app/features/ai_assistant/domain/usecases/handle_agent_response_use_case.dart';
 import 'package:yusr_app/features/ai_assistant/domain/usecases/send_message_use_case.dart';
 import 'package:yusr_app/features/ai_assistant/presentation/cubit/chat_cubit.dart';
+import 'package:yusr_app/features/content_download/data/datasources/background_downloader_data_source.dart';
+import 'package:yusr_app/features/content_download/data/datasources/content_local_data_source.dart';
+import 'package:yusr_app/features/content_download/data/datasources/content_remote_data_source.dart';
+import 'package:yusr_app/features/content_download/data/repositories/content_download_repository_impl.dart';
+import 'package:yusr_app/features/content_download/domain/repositories/content_download_repository.dart';
+import 'package:yusr_app/features/content_download/domain/usecases/download_content_use_case.dart';
+import 'package:yusr_app/features/content_download/domain/usecases/pause_download_use_case.dart';
+import 'package:yusr_app/features/content_download/domain/usecases/resume_download_use_case.dart';
+import 'package:yusr_app/features/content_download/presentation/cubit/content_download_cubit.dart';
 import 'package:yusr_app/features/home/data/daily_ayah_repository.dart';
 import 'package:yusr_app/features/home/data/daily_ayah_remote_data_source.dart';
 import 'package:yusr_app/features/prayer_times/data/repositories/prayer_times_repository.dart';
@@ -59,6 +68,48 @@ Future<void> initDependencies() async {
           receiveTimeout: const Duration(seconds: 45),
         ),
       ),
+    );
+  }
+
+  if (!sl.isRegistered<ContentRemoteDataSource>()) {
+    sl.registerLazySingleton<ContentRemoteDataSource>(
+      () => ContentRemoteDataSource(
+        sl.isRegistered<SupabaseClient>() ? sl<SupabaseClient>() : null,
+      ),
+    );
+  }
+  if (!sl.isRegistered<ContentLocalDataSource>()) {
+    sl.registerLazySingleton<ContentLocalDataSource>(
+      () => ContentLocalDataSource(sl<IStorageService>()),
+    );
+  }
+  if (!sl.isRegistered<BackgroundDownloaderDataSource>()) {
+    sl.registerLazySingleton<BackgroundDownloaderDataSource>(
+      () => const BackgroundDownloaderDataSource(),
+    );
+  }
+  if (!sl.isRegistered<ContentDownloadRepository>()) {
+    sl.registerLazySingleton<ContentDownloadRepository>(
+      () => ContentDownloadRepositoryImpl(
+        remoteDataSource: sl<ContentRemoteDataSource>(),
+        localDataSource: sl<ContentLocalDataSource>(),
+        downloaderDataSource: sl<BackgroundDownloaderDataSource>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<DownloadContentUseCase>()) {
+    sl.registerLazySingleton<DownloadContentUseCase>(
+      () => DownloadContentUseCase(sl<ContentDownloadRepository>()),
+    );
+  }
+  if (!sl.isRegistered<PauseDownloadUseCase>()) {
+    sl.registerLazySingleton<PauseDownloadUseCase>(
+      () => PauseDownloadUseCase(sl<ContentDownloadRepository>()),
+    );
+  }
+  if (!sl.isRegistered<ResumeDownloadUseCase>()) {
+    sl.registerLazySingleton<ResumeDownloadUseCase>(
+      () => ResumeDownloadUseCase(sl<ContentDownloadRepository>()),
     );
   }
 
@@ -167,6 +218,17 @@ Future<void> initDependencies() async {
             ? sl<SendMessageUseCase>()
             : const SendMessageUseCase(_UnavailableAssistantRepository()),
         sl<HandleAgentResponseUseCase>(),
+      ),
+    );
+  }
+
+  if (!sl.isRegistered<ContentDownloadCubit>()) {
+    sl.registerFactory<ContentDownloadCubit>(
+      () => ContentDownloadCubit(
+        sl<ContentDownloadRepository>(),
+        sl<DownloadContentUseCase>(),
+        sl<PauseDownloadUseCase>(),
+        sl<ResumeDownloadUseCase>(),
       ),
     );
   }

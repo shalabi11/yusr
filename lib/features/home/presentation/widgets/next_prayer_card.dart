@@ -33,7 +33,12 @@ class NextPrayerCardState extends State<NextPrayerCard> {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    final initialState = context.read<PrayerTimesCubit>().state;
+    if (initialState is PrayerTimesLoaded) {
+      _updateNextPrayerDisplay(initialState.prayerTimes);
+    }
+
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
       final state = context.read<PrayerTimesCubit>().state;
       if (state is PrayerTimesLoaded) {
         _updateNextPrayerDisplay(state.prayerTimes);

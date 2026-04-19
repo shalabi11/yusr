@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:yusr_app/core/theme/app_colors.dart';
 
 AppBar buildQuranPageAppBar({
@@ -32,19 +33,71 @@ AppBar buildQuranPageAppBar({
   );
 }
 
-Widget buildQuranPageImage(int page) {
+Widget buildQuranPageImage(
+  BuildContext context,
+  int page, {
+  String? localImagePath,
+  String? remoteImageUrl,
+}) {
+  final screenWidth = MediaQuery.sizeOf(context).width;
+  final dpr = MediaQuery.devicePixelRatioOf(context);
+  final targetCacheWidth = (screenWidth * dpr).round().clamp(720, 2200);
+
+  Widget buildMissingImageMessage() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 22),
+      child: Text(
+        'تعذر تحميل صفحة القرآن. تأكد من تنزيل بيانات القرآن من شاشة تنزيل المحتوى.',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: AppColors.primaryDark,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  final hasLocal = localImagePath != null && localImagePath.isNotEmpty;
+  final hasRemote = remoteImageUrl != null && remoteImageUrl.isNotEmpty;
+
   return InteractiveViewer(
     minScale: 1,
     maxScale: 4,
     child: Center(
-      child: Image.asset(
-        'assets/quran_images/$page.png',
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => const Text(
-          'تعذر تحميل الصورة',
-          style: TextStyle(color: Colors.white),
-        ),
-      ),
+      child: hasLocal
+          ? Image.file(
+              File(localImagePath),
+              fit: BoxFit.contain,
+              cacheWidth: targetCacheWidth,
+              filterQuality: FilterQuality.medium,
+              errorBuilder: (_, __, ___) {
+                if (!hasRemote) return buildMissingImageMessage();
+                return Image.network(
+                  remoteImageUrl,
+                  fit: BoxFit.contain,
+                  cacheWidth: targetCacheWidth,
+                  filterQuality: FilterQuality.medium,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return const CircularProgressIndicator();
+                  },
+                  errorBuilder: (_, __, ___) => buildMissingImageMessage(),
+                );
+              },
+            )
+          : hasRemote
+          ? Image.network(
+              remoteImageUrl,
+              fit: BoxFit.contain,
+              cacheWidth: targetCacheWidth,
+              filterQuality: FilterQuality.medium,
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return const CircularProgressIndicator();
+              },
+              errorBuilder: (_, __, ___) => buildMissingImageMessage(),
+            )
+          : buildMissingImageMessage(),
     ),
   );
 }

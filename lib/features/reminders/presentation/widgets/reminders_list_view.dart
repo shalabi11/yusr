@@ -7,6 +7,7 @@ class RemindersListView extends StatelessWidget {
   const RemindersListView({
     required this.reminders,
     required this.onDelete,
+    required this.onConfirmDelete,
     required this.onToggle,
     required this.onTimeChanged,
     this.onRefresh,
@@ -15,6 +16,7 @@ class RemindersListView extends StatelessWidget {
 
   final List<ReminderModel> reminders;
   final Future<void> Function(ReminderModel reminder) onDelete;
+  final Future<bool> Function(ReminderModel reminder) onConfirmDelete;
   final Future<void> Function(ReminderModel reminder, bool enabled) onToggle;
   final Future<void> Function(ReminderModel reminder, TimeOfDay time)
   onTimeChanged;
@@ -33,6 +35,7 @@ class RemindersListView extends StatelessWidget {
           child: Dismissible(
             key: ValueKey(reminder.id),
             direction: DismissDirection.endToStart,
+            confirmDismiss: (_) => onConfirmDelete(reminder),
             background: Container(
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.symmetric(horizontal: 20),

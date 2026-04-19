@@ -22,6 +22,13 @@ Future<void> goToSurahJump({
   Navigator.of(sheetContext).pop();
   if (!parentContext.mounted) return;
 
+  if (surahs.isEmpty) {
+    ScaffoldMessenger.of(parentContext).showSnackBar(
+      const SnackBar(content: Text('بيانات القرآن غير متوفرة بعد')),
+    );
+    return;
+  }
+
   final surah = surahs.firstWhere(
     (s) => s.number == surahNumber,
     orElse: () => surahs.first,

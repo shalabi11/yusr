@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:yusr_app/core/services/app_bootstrap.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
@@ -14,12 +15,16 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
+  static const Duration _minimumSplashDuration = Duration(milliseconds: 700);
+
   late AnimationController _controller;
   late Animation<double> _animation;
+  late final DateTime _startedAt;
 
   @override
   void initState() {
     super.initState();
+    _startedAt = DateTime.now();
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -27,17 +32,33 @@ class _SplashScreenState extends State<SplashScreen>
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
     _controller.forward();
 
-    Timer(const Duration(seconds: 3), () {
-      if (!mounted) return;
+    unawaited(_navigateWhenReady());
+  }
 
-      final hasSeenIntro = StorageService.introSeen;
-      final hasSeenAccountOnboarding = StorageService.accountOnboardingSeen;
+  Future<void> _navigateWhenReady() async {
+    await AppBootstrap.instance.ready;
 
-      final nextRoute = !hasSeenIntro
-          ? '/intro'
-          : (hasSeenAccountOnboarding ? '/home' : '/onboarding-auth');
-      Navigator.pushReplacementNamed(context, nextRoute);
-    });
+    final elapsed = DateTime.now().difference(_startedAt);
+    if (elapsed < _minimumSplashDuration) {
+      await Future<void>.delayed(_minimumSplashDuration - elapsed);
+    }
+
+    if (!mounted) return;
+
+    if (AppBootstrap.instance.status.value != AppBootstrapStatus.ready) {
+      Navigator.pushReplacementNamed(context, '/intro');
+      return;
+    }
+
+    final hasSeenIntro = StorageService.introSeen;
+    final hasSeenAccountOnboarding = StorageService.accountOnboardingSeen;
+    final isQuranDownloaded = StorageService.quranContentDownloaded;
+    final nextRoute = !hasSeenIntro
+        ? '/intro'
+        : (!hasSeenAccountOnboarding
+              ? '/onboarding-auth'
+              : (isQuranDownloaded ? '/home' : '/content-download'));
+    Navigator.pushReplacementNamed(context, nextRoute);
   }
 
   @override

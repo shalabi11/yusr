@@ -19,8 +19,27 @@ class ReminderModel {
     required this.iconCodeInfo,
   });
 
-  IconData get icon => IconData(iconCodeInfo, fontFamily: 'MaterialIcons');
+  IconData get icon => _iconFromCodePoint(iconCodeInfo);
   TimeOfDay get timeOfDay => TimeOfDay(hour: hour, minute: minute);
+
+  static IconData _iconFromCodePoint(int codePoint) {
+    if (codePoint == Icons.nightlight_round.codePoint) {
+      return Icons.nightlight_round;
+    }
+    if (codePoint == Icons.wb_sunny_outlined.codePoint) {
+      return Icons.wb_sunny_outlined;
+    }
+    if (codePoint == Icons.brightness_high.codePoint) {
+      return Icons.brightness_high;
+    }
+    if (codePoint == Icons.brightness_4.codePoint) {
+      return Icons.brightness_4;
+    }
+    if (codePoint == Icons.auto_awesome.codePoint) {
+      return Icons.auto_awesome;
+    }
+    return Icons.notifications;
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -39,6 +58,9 @@ class ReminderModel {
     hour: json['hour'] ?? 12,
     minute: json['minute'] ?? 0,
     enabled: json['enabled'] ?? true,
-    iconCodeInfo: json['iconCodeInfo'] ?? Icons.notifications.codePoint,
+    iconCodeInfo: json['iconCodeInfo'] is int
+        ? json['iconCodeInfo'] as int
+        : int.tryParse(json['iconCodeInfo']?.toString() ?? '') ??
+              Icons.notifications.codePoint,
   );
 }

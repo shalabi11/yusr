@@ -64,13 +64,17 @@ class ReminderCard extends StatelessWidget {
                   const SizedBox(height: 5),
                   Row(
                     children: [
-                      Text(
-                        '${reminder.subtitleKey.tr} • $displayTime',
-                        style: TextStyle(
-                          color: AppColors.textSecondary.withValues(
-                            alpha: reminder.enabled ? 1.0 : 0.5,
+                      Expanded(
+                        child: Text(
+                          '${reminder.subtitleKey.tr} • $displayTime',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: AppColors.textSecondary.withValues(
+                              alpha: reminder.enabled ? 1.0 : 0.5,
+                            ),
+                            fontSize: 13,
                           ),
-                          fontSize: 13,
                         ),
                       ),
                       const SizedBox(width: 5),

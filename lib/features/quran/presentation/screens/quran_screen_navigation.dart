@@ -11,6 +11,13 @@ extension QuranScreenNavigation on QuranScreenState {
     }
 
     if (readAsText) {
+      if (_surahs.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('بيانات القرآن غير متوفرة بعد')),
+        );
+        return;
+      }
       final surah = _surahs.firstWhere(
         (s) => s.number == _lastRead!.surahNumber,
         orElse: () => _surahs.first,
@@ -37,6 +44,14 @@ extension QuranScreenNavigation on QuranScreenState {
   }
 
   Future<void> openQuickJumpSheet(bool readAsText) async {
+    if (readAsText && _surahs.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('بيانات القرآن غير متوفرة بعد')),
+      );
+      return;
+    }
+
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,

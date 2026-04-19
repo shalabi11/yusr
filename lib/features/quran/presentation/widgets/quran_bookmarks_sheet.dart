@@ -59,6 +59,12 @@ class _QuranBookmarksSheetState extends State<QuranBookmarksSheet> {
     if (!widget.parentContext.mounted) return;
 
     if (widget.readAsText) {
+      if (widget.surahs.isEmpty) {
+        ScaffoldMessenger.of(widget.parentContext).showSnackBar(
+          const SnackBar(content: Text('بيانات القرآن غير متوفرة بعد')),
+        );
+        return;
+      }
       final surah = widget.surahs.firstWhere(
         (s) => s.number == bookmark.surahNumber,
         orElse: () => widget.surahs.first,

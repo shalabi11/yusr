@@ -54,6 +54,23 @@ class StorageService {
   static bool get accountOnboardingSeen => _instance.accountOnboardingSeen;
   static Future<void> setAccountOnboardingSeen(bool seen) =>
       _instance.setAccountOnboardingSeen(seen);
+  static bool get isContentDownloaded => _instance.isContentDownloaded;
+  static Future<void> setContentDownloaded(bool downloaded) =>
+      _instance.setContentDownloaded(downloaded);
+  static bool get quranContentDownloaded => _instance.quranContentDownloaded;
+  static Future<void> setQuranContentDownloaded(bool downloaded) =>
+      _instance.setQuranContentDownloaded(downloaded);
+  static bool get adhkarContentDownloaded => _instance.adhkarContentDownloaded;
+  static Future<void> setAdhkarContentDownloaded(bool downloaded) =>
+      _instance.setAdhkarContentDownloaded(downloaded);
+  static int get downloadedContentVersion =>
+      _instance.downloadedContentVersion;
+  static Future<void> setDownloadedContentVersion(int version) =>
+      _instance.setDownloadedContentVersion(version);
+  static String? get downloadedContentBasePath =>
+      _instance.downloadedContentBasePath;
+  static Future<void> setDownloadedContentBasePath(String? path) =>
+      _instance.setDownloadedContentBasePath(path);
   static bool get fastingRemindersEnabled => _instance.fastingRemindersEnabled;
   static Future<void> setFastingRemindersEnabled(bool enabled) =>
       _instance.setFastingRemindersEnabled(enabled);

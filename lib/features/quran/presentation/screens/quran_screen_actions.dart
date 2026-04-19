@@ -2,10 +2,14 @@ part of 'quran_screen.dart';
 
 extension QuranScreenActions on QuranScreenState {
   Future<void> loadData() async {
-    final surahs = await _repo.loadSurahs();
-    await _repo.syncProgressOnStartup();
-    final lastRead = _repo.getLastRead();
-    _applyLoadedData(surahs, lastRead);
+    try {
+      final surahs = await _repo.loadSurahs();
+      await _repo.syncProgressOnStartup();
+      final lastRead = _repo.getLastRead();
+      _applyLoadedData(surahs, lastRead);
+    } catch (_) {
+      _applyLoadedData(const <QuranSurah>[], _repo.getLastRead());
+    }
   }
 
   void computeKhatmaPlan() {

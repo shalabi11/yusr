@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:yusr_app/features/ai_assistant/presentation/screens/ai_assistant_entry_screen.dart';
 import 'package:yusr_app/features/auth/presentation/screens/auth_screen.dart';
 import 'package:yusr_app/features/auth/presentation/screens/profile_screen.dart';
 import 'package:yusr_app/features/adhkar/presentation/screens/adhkar_screen.dart';
+import 'package:yusr_app/features/content_download/presentation/cubit/content_download_cubit.dart';
 import 'package:yusr_app/features/splash/splash_screen.dart';
 import 'package:yusr_app/features/intro/presentation/intro_screen.dart';
 import 'package:yusr_app/features/home/presentation/screens/home_screen.dart';
@@ -11,6 +13,8 @@ import 'package:yusr_app/features/prayer_times/presentation/screens/prayer_times
 import 'package:yusr_app/features/quran/presentation/screens/quran_screen.dart';
 import 'package:yusr_app/features/reminders/presentation/screens/reminders_screen.dart';
 import 'package:yusr_app/features/settings/presentation/screens/settings_screen.dart';
+import 'package:yusr_app/features/content_download/presentation/screens/content_download_screen.dart';
+import 'package:yusr_app/injection_container.dart';
 
 class AppRouter {
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
@@ -38,6 +42,13 @@ class AppRouter {
       case '/assistant':
         return MaterialPageRoute(
           builder: (_) => const AIAssistantEntryScreen(),
+        );
+      case '/content-download':
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider<ContentDownloadCubit>(
+            create: (_) => sl<ContentDownloadCubit>()..syncInitialState(),
+            child: const ContentDownloadScreen(),
+          ),
         );
       case '/profile':
         return MaterialPageRoute(builder: (_) => const ProfileScreen());

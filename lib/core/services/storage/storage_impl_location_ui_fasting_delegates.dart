@@ -35,6 +35,31 @@ mixin StorageLocationUiFastingDelegates {
   Future<void> setAccountOnboardingSeen(bool seen) =>
       _ui.setAccountOnboardingSeen(seen);
 
+  bool get isContentDownloaded => _ui.isContentDownloaded;
+
+  Future<void> setContentDownloaded(bool downloaded) =>
+      _ui.setContentDownloaded(downloaded);
+
+  bool get quranContentDownloaded => _ui.quranContentDownloaded;
+
+  Future<void> setQuranContentDownloaded(bool downloaded) =>
+      _ui.setQuranContentDownloaded(downloaded);
+
+  bool get adhkarContentDownloaded => _ui.adhkarContentDownloaded;
+
+  Future<void> setAdhkarContentDownloaded(bool downloaded) =>
+      _ui.setAdhkarContentDownloaded(downloaded);
+
+  int get downloadedContentVersion => _ui.downloadedContentVersion;
+
+  Future<void> setDownloadedContentVersion(int version) =>
+      _ui.setDownloadedContentVersion(version);
+
+  String? get downloadedContentBasePath => _ui.downloadedContentBasePath;
+
+  Future<void> setDownloadedContentBasePath(String? path) =>
+      _ui.setDownloadedContentBasePath(path);
+
   bool get fastingRemindersEnabled => _fasting.fastingRemindersEnabled;
 
   Future<void> setFastingRemindersEnabled(bool enabled) =>

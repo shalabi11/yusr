@@ -59,6 +59,7 @@ class _RemindersScreenState extends State<RemindersScreen>
         child: RemindersListView(
           reminders: reminders,
           onRefresh: loadAndSyncOnStart,
+          onConfirmDelete: confirmDeleteReminder,
           onDelete: deleteReminderBySwipe,
           onToggle: (reminder, enabled) async {
             _updateReminderEnabled(reminder, enabled);

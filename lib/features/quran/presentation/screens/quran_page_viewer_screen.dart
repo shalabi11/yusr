@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
@@ -34,6 +36,8 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
   bool _reverse = false;
   final Set<int> _savedPages = <int>{};
   final Map<int, _PageMeta> _pageMetaByPage = <int, _PageMeta>{};
+  final Map<int, String> _pageImageUrlByPage = <int, String>{};
+  final Map<int, String> _localPageImagePathByPage = <int, String>{};
 
   void _replacePageMeta(Map<int, _PageMeta> map) {
     setState(() {
@@ -45,6 +49,43 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
 
   void _markPageSaved(int page) {
     setState(() => _savedPages.add(page));
+  }
+
+  void _replacePageImageUrls(Map<int, String> map) {
+    setState(() {
+      _pageImageUrlByPage
+        ..clear()
+        ..addAll(map);
+    });
+  }
+
+  void _replaceLocalPageImagePaths(Map<int, String> map) {
+    setState(() {
+      _localPageImagePathByPage
+        ..clear()
+        ..addAll(map);
+    });
+  }
+
+  void _precacheNextPage(int currentPage) {
+    final currentIndex = _pages.indexOf(currentPage);
+    if (currentIndex < 0 || currentIndex + 1 >= _pages.length) {
+      return;
+    }
+
+    final nextPage = _pages[currentIndex + 1];
+    final localPath = _localPageImagePathByPage[nextPage];
+    final remoteUrl = _pageImageUrlByPage[nextPage];
+
+    ImageProvider? provider;
+    if (localPath != null && localPath.isNotEmpty) {
+      provider = FileImage(File(localPath));
+    } else if (remoteUrl != null && remoteUrl.isNotEmpty) {
+      provider = NetworkImage(remoteUrl);
+    }
+
+    if (provider == null) return;
+    precacheImage(provider, context);
   }
 
   @override
@@ -65,6 +106,26 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
     final lastReadPage = _repo.getLastRead()?.pageNumber;
     if (lastReadPage != null) _savedPages.add(lastReadPage);
     _loadPageMetaByPage();
+    _loadLocalPageImages();
+    _loadRemotePageImages();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _precacheNextPage(_currentPage);
+    });
+  }
+
+  Future<void> _loadLocalPageImages() async {
+    final map = await _repo.loadLocalPageImagePaths();
+    if (!mounted || map.isEmpty) return;
+    _replaceLocalPageImagePaths(map);
+    _precacheNextPage(_currentPage);
+  }
+
+  Future<void> _loadRemotePageImages() async {
+    final map = await _repo.loadPageImageUrls();
+    if (!mounted || map.isEmpty) return;
+    _replacePageImageUrls(map);
+    _precacheNextPage(_currentPage);
   }
 
   @override
@@ -92,13 +153,24 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
             controller: _controller,
             reverse: _reverse,
             itemCount: _pages.length,
-            onPageChanged: (index) =>
-                setState(() => _currentPage = _pages[index]),
+            onPageChanged: (index) {
+              final page = _pages[index];
+              setState(() => _currentPage = page);
+              _precacheNextPage(page);
+            },
             itemBuilder: (context, index) {
               final page = _pages[index];
               return Stack(
                 fit: StackFit.expand,
-                children: [buildQuranPageImage(page), _buildPageOverlay(page)],
+                children: [
+                  buildQuranPageImage(
+                    context,
+                    page,
+                    localImagePath: _localPageImagePathByPage[page],
+                    remoteImageUrl: _pageImageUrlByPage[page],
+                  ),
+                  _buildPageOverlay(page),
+                ],
               );
             },
           ),

@@ -7,6 +7,31 @@ class QuranCatalogRemoteService {
 
   final SupabaseClient? _supabaseClient;
 
+  Future<Map<int, String>> loadPageImageUrls() async {
+    final client = _supabaseClient;
+    if (client == null) return const <int, String>{};
+
+    final rows = await client
+        .from('quran_page_images')
+        .select('page_number, url')
+        .eq('is_active', true)
+        .order('page_number', ascending: true);
+
+    final data = (rows as List<dynamic>).cast<Map<String, dynamic>>();
+    if (data.isEmpty) return const <int, String>{};
+
+    final result = <int, String>{};
+    for (final row in data) {
+      final pageNumber = (row['page_number'] as num?)?.toInt();
+      final url = row['url']?.toString() ?? '';
+      if (pageNumber == null || pageNumber <= 0 || url.isEmpty) {
+        continue;
+      }
+      result[pageNumber] = url;
+    }
+    return result;
+  }
+
   Future<List<QuranSurah>?> loadSurahs() async {
     final client = _supabaseClient;
     if (client == null) return null;

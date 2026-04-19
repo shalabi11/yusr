@@ -41,6 +41,21 @@ abstract class IStorageService {
   bool get accountOnboardingSeen;
   Future<void> setAccountOnboardingSeen(bool seen);
 
+  bool get isContentDownloaded;
+  Future<void> setContentDownloaded(bool downloaded);
+
+  bool get quranContentDownloaded;
+  Future<void> setQuranContentDownloaded(bool downloaded);
+
+  bool get adhkarContentDownloaded;
+  Future<void> setAdhkarContentDownloaded(bool downloaded);
+
+  int get downloadedContentVersion;
+  Future<void> setDownloadedContentVersion(int version);
+
+  String? get downloadedContentBasePath;
+  Future<void> setDownloadedContentBasePath(String? path);
+
   bool get fastingRemindersEnabled;
   Future<void> setFastingRemindersEnabled(bool enabled);
 
