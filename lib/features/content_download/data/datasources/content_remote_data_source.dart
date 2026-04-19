@@ -15,7 +15,9 @@ class ContentRemoteDataSource {
       return const <DownloadableContentFileModel>[];
     }
 
-    final typeValues = targetTypes.map((e) => e.value).toList(growable: false);
+    final typeValues = _typeValuesForTargets(
+      targetTypes,
+    ).toList(growable: false);
     final response = await client
         .from('files')
         .select('id, name, type, url, size')
@@ -23,9 +25,34 @@ class ContentRemoteDataSource {
         .order('id', ascending: true);
 
     final rows = (response as List<dynamic>).cast<Map<String, dynamic>>();
-    return rows
-        .map(DownloadableContentFileModel.fromMap)
-        .where((e) => e.name.isNotEmpty && e.url.isNotEmpty)
-        .toList();
+    final files = <DownloadableContentFileModel>[];
+    for (final row in rows) {
+      try {
+        final file = DownloadableContentFileModel.fromMap(row);
+        if (file.name.isNotEmpty && file.url.isNotEmpty) {
+          files.add(file);
+        }
+      } on FormatException {
+        // Ignore unrecognized rows instead of failing the full manifest request.
+      }
+    }
+
+    return files;
+  }
+
+  Set<String> _typeValuesForTargets(Set<DownloadContentType> targetTypes) {
+    final values = <String>{};
+    if (targetTypes.contains(DownloadContentType.quran)) {
+      values.addAll(const <String>[
+        'quran',
+        'quran_images',
+        'quran-images',
+        'images',
+      ]);
+    }
+    if (targetTypes.contains(DownloadContentType.adhkar)) {
+      values.addAll(const <String>['adhkar', 'azkar', 'adkar']);
+    }
+    return values;
   }
 }

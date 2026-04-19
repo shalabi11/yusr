@@ -18,6 +18,7 @@ class ContentDownloadState extends Equatable {
     this.errorMessage,
     this.downloadedBytes = 0,
     this.totalBytes = 0,
+    this.bytesPerSecond = 0,
     this.completedFiles = 0,
     this.totalFiles = 0,
     this.wasAlreadyDownloaded = false,
@@ -29,6 +30,7 @@ class ContentDownloadState extends Equatable {
   final String? errorMessage;
   final int downloadedBytes;
   final int totalBytes;
+  final int bytesPerSecond;
   final int completedFiles;
   final int totalFiles;
   final bool wasAlreadyDownloaded;
@@ -42,6 +44,11 @@ class ContentDownloadState extends Equatable {
   double get progress =>
       totalBytes == 0 ? 0.0 : (downloadedBytes / totalBytes).clamp(0.0, 1.0);
 
+  int get remainingBytes {
+    final remaining = totalBytes - downloadedBytes;
+    return remaining < 0 ? 0 : remaining;
+  }
+
   ContentDownloadState copyWith({
     ContentDownloadStatus? status,
     ContentDownloadOption? selectedOption,
@@ -50,6 +57,7 @@ class ContentDownloadState extends Equatable {
     bool clearError = false,
     int? downloadedBytes,
     int? totalBytes,
+    int? bytesPerSecond,
     int? completedFiles,
     int? totalFiles,
     bool? wasAlreadyDownloaded,
@@ -61,6 +69,7 @@ class ContentDownloadState extends Equatable {
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       downloadedBytes: downloadedBytes ?? this.downloadedBytes,
       totalBytes: totalBytes ?? this.totalBytes,
+      bytesPerSecond: bytesPerSecond ?? this.bytesPerSecond,
       completedFiles: completedFiles ?? this.completedFiles,
       totalFiles: totalFiles ?? this.totalFiles,
       wasAlreadyDownloaded: wasAlreadyDownloaded ?? this.wasAlreadyDownloaded,
@@ -75,6 +84,7 @@ class ContentDownloadState extends Equatable {
     errorMessage,
     downloadedBytes,
     totalBytes,
+    bytesPerSecond,
     completedFiles,
     totalFiles,
     wasAlreadyDownloaded,

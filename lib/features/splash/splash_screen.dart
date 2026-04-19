@@ -52,12 +52,9 @@ class _SplashScreenState extends State<SplashScreen>
 
     final hasSeenIntro = StorageService.introSeen;
     final hasSeenAccountOnboarding = StorageService.accountOnboardingSeen;
-    final isQuranDownloaded = StorageService.quranContentDownloaded;
     final nextRoute = !hasSeenIntro
         ? '/intro'
-        : (!hasSeenAccountOnboarding
-              ? '/onboarding-auth'
-              : (isQuranDownloaded ? '/home' : '/content-download'));
+        : (!hasSeenAccountOnboarding ? '/onboarding-auth' : '/home');
     Navigator.pushReplacementNamed(context, nextRoute);
   }
 

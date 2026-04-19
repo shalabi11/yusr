@@ -6,7 +6,9 @@ import 'package:yusr_app/core/bloc/settings_cubit.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/widgets/app_radial_background.dart';
 import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
+import 'package:yusr_app/features/content_download/presentation/widgets/content_download_status_chip.dart';
 import 'package:yusr_app/features/settings/presentation/widgets/fasting_settings_card.dart';
+import 'package:yusr_app/features/settings/presentation/widgets/content_download_settings_card.dart';
 import 'package:yusr_app/features/settings/presentation/widgets/language_setting_card.dart';
 import 'package:yusr_app/features/settings/presentation/widgets/prayer_settings_card.dart';
 
@@ -41,6 +43,7 @@ class SettingsScreen extends StatelessWidget {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(20),
             children: [
+              const ContentDownloadStatusChip(bottomSpacing: 20),
               const LanguageSettingCard(),
               const SizedBox(height: 20),
               BlocBuilder<SettingsCubit, SettingsState>(
@@ -54,6 +57,8 @@ class SettingsScreen extends StatelessWidget {
                   return FastingSettingsCard(state: state);
                 },
               ),
+              const SizedBox(height: 20),
+              const ContentDownloadSettingsCard(),
             ],
           ),
         ),

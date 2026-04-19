@@ -6,7 +6,16 @@ import 'package:yusr_app/features/content_download/presentation/cubit/content_do
 import 'package:yusr_app/features/content_download/presentation/widgets/content_progress_widget.dart';
 
 class ContentDownloadScreen extends StatelessWidget {
-  const ContentDownloadScreen({super.key});
+  const ContentDownloadScreen({
+    this.initialOption,
+    this.autoProceedOnComplete = false,
+    this.successRoute,
+    super.key,
+  });
+
+  final ContentDownloadOption? initialOption;
+  final bool autoProceedOnComplete;
+  final String? successRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -15,15 +24,29 @@ class ContentDownloadScreen extends StatelessWidget {
           previous.status != current.status &&
           current.status == ContentDownloadStatus.completed,
       listener: (context, state) {
+        if (!autoProceedOnComplete) {
+          return;
+        }
+
+        final targetRoute = successRoute;
+        if (targetRoute != null && targetRoute.isNotEmpty) {
+          Navigator.pushNamedAndRemoveUntil(context, targetRoute, (route) {
+            return route.settings.name == '/home' || route.isFirst;
+          });
+          return;
+        }
+
         Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       },
-      child: const _ContentDownloadView(),
+      child: _ContentDownloadView(initialOption: initialOption),
     );
   }
 }
 
 class _ContentDownloadView extends StatefulWidget {
-  const _ContentDownloadView();
+  const _ContentDownloadView({required this.initialOption});
+
+  final ContentDownloadOption? initialOption;
 
   @override
   State<_ContentDownloadView> createState() => _ContentDownloadViewState();
@@ -31,6 +54,12 @@ class _ContentDownloadView extends StatefulWidget {
 
 class _ContentDownloadViewState extends State<_ContentDownloadView> {
   ContentDownloadOption? _selectedOption;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedOption = widget.initialOption;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +121,8 @@ class _ContentDownloadViewState extends State<_ContentDownloadView> {
                         progress: state.progress,
                         downloadedBytes: state.downloadedBytes,
                         totalBytes: state.totalBytes,
-                        currentFileName: state.currentFileName,
+                        remainingBytes: state.remainingBytes,
+                        bytesPerSecond: state.bytesPerSecond,
                         completedFiles: state.completedFiles,
                         totalFiles: state.totalFiles,
                       ),

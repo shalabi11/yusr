@@ -6,7 +6,8 @@ class ContentProgressWidget extends StatelessWidget {
     required this.progress,
     required this.downloadedBytes,
     required this.totalBytes,
-    required this.currentFileName,
+    required this.remainingBytes,
+    required this.bytesPerSecond,
     required this.completedFiles,
     required this.totalFiles,
     super.key,
@@ -15,7 +16,8 @@ class ContentProgressWidget extends StatelessWidget {
   final double progress;
   final int downloadedBytes;
   final int totalBytes;
-  final String? currentFileName;
+  final int remainingBytes;
+  final int bytesPerSecond;
   final int completedFiles;
   final int totalFiles;
 
@@ -55,10 +57,13 @@ class ContentProgressWidget extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'الملف الحالي: ${currentFileName ?? '-'}',
+            'المتبقي: ${_formatBytes(remainingBytes)}',
             style: const TextStyle(color: AppColors.textWhite),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'السرعة: ${_formatBytes(bytesPerSecond)}/ث',
+            style: const TextStyle(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 6),
           Text(

@@ -19,6 +19,8 @@ abstract class ContentDownloadRepository {
 
   Future<DownloadTaskSnapshot> getTaskSnapshot(String taskId);
 
+  Stream<DownloadTaskSnapshot> observeTaskSnapshot(String taskId);
+
   Future<void> pauseTask(String taskId);
 
   Future<String?> resumeTask(String taskId);
@@ -27,6 +29,8 @@ abstract class ContentDownloadRepository {
     required DownloadableContentFile file,
     required String localPath,
   });
+
+  Future<bool> isFileAlreadyDownloaded(DownloadableContentFile file);
 
   Future<void> markSelectionCompleted({
     required ContentDownloadOption option,

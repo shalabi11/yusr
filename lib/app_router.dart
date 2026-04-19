@@ -5,6 +5,8 @@ import 'package:yusr_app/features/auth/presentation/screens/auth_screen.dart';
 import 'package:yusr_app/features/auth/presentation/screens/profile_screen.dart';
 import 'package:yusr_app/features/adhkar/presentation/screens/adhkar_screen.dart';
 import 'package:yusr_app/features/content_download/presentation/cubit/content_download_cubit.dart';
+import 'package:yusr_app/features/content_download/domain/entities/content_download_option.dart';
+import 'package:yusr_app/features/content_download/presentation/screens/content_download_required_screen.dart';
 import 'package:yusr_app/features/splash/splash_screen.dart';
 import 'package:yusr_app/features/intro/presentation/intro_screen.dart';
 import 'package:yusr_app/features/home/presentation/screens/home_screen.dart';
@@ -14,6 +16,7 @@ import 'package:yusr_app/features/quran/presentation/screens/quran_screen.dart';
 import 'package:yusr_app/features/reminders/presentation/screens/reminders_screen.dart';
 import 'package:yusr_app/features/settings/presentation/screens/settings_screen.dart';
 import 'package:yusr_app/features/content_download/presentation/screens/content_download_screen.dart';
+import 'package:yusr_app/core/services/storage_service.dart';
 import 'package:yusr_app/injection_container.dart';
 
 class AppRouter {
@@ -24,19 +27,48 @@ class AppRouter {
       case '/intro':
         return MaterialPageRoute(builder: (_) => const IntroScreen());
       case '/home':
-        return MaterialPageRoute(builder: (_) => const HomeScreen());
+        return MaterialPageRoute(
+          builder: (_) => HomeScreen(dailyAyahRepository: sl()),
+        );
       case '/onboarding-auth':
         return MaterialPageRoute(
           builder: (_) => const AccountOnboardingScreen(),
         );
       case '/reminders':
-        return MaterialPageRoute(builder: (_) => const RemindersScreen());
+        return MaterialPageRoute(
+          builder: (_) =>
+              RemindersScreen(repository: sl(), adhkarRepository: sl()),
+        );
       case '/settings':
         return MaterialPageRoute(builder: (_) => const SettingsScreen());
       case '/quran':
-        return MaterialPageRoute(builder: (_) => const QuranScreen());
+        if (!StorageService.quranContentDownloaded) {
+          return MaterialPageRoute(
+            builder: (_) => const ContentDownloadRequiredScreen(
+              title: 'تنزيل القرآن غير مكتمل',
+              description:
+                  'لا يمكن فتح شاشة القرآن قبل إكمال تنزيل ملفاته. يمكنك بدء التنزيل الآن ثم المتابعة تلقائيًا.',
+              requiredOption: ContentDownloadOption.quranOnly,
+              targetRoute: '/quran',
+            ),
+          );
+        }
+        return MaterialPageRoute(builder: (_) => QuranScreen(repo: sl()));
       case '/adhkar':
-        return MaterialPageRoute(builder: (_) => const AdhkarScreen());
+        if (!StorageService.adhkarContentDownloaded) {
+          return MaterialPageRoute(
+            builder: (_) => const ContentDownloadRequiredScreen(
+              title: 'تنزيل الأذكار غير مكتمل',
+              description:
+                  'لا يمكن فتح شاشة الأذكار قبل إكمال تنزيل محتواها. يمكنك بدء التنزيل الآن ثم المتابعة تلقائيًا.',
+              requiredOption: ContentDownloadOption.adhkarOnly,
+              targetRoute: '/adhkar',
+            ),
+          );
+        }
+        return MaterialPageRoute(
+          builder: (_) => AdhkarScreen(repo: sl(), remindersRepo: sl()),
+        );
       case '/prayer':
         return MaterialPageRoute(builder: (_) => const PrayerTimesScreen());
       case '/assistant':
@@ -44,10 +76,20 @@ class AppRouter {
           builder: (_) => const AIAssistantEntryScreen(),
         );
       case '/content-download':
+        final args = settings.arguments as Map<String, dynamic>?;
+        final initialOption = args?['initialOption'] as ContentDownloadOption?;
+        final autoProceedOnComplete = args?['autoProceedOnComplete'] == true;
+        final successRoute = args?['successRoute']?.toString();
+        final downloadCubit = sl<ContentDownloadCubit>();
+        downloadCubit.syncInitialState();
         return MaterialPageRoute(
-          builder: (_) => BlocProvider<ContentDownloadCubit>(
-            create: (_) => sl<ContentDownloadCubit>()..syncInitialState(),
-            child: const ContentDownloadScreen(),
+          builder: (_) => BlocProvider<ContentDownloadCubit>.value(
+            value: downloadCubit,
+            child: ContentDownloadScreen(
+              initialOption: initialOption,
+              autoProceedOnComplete: autoProceedOnComplete,
+              successRoute: successRoute,
+            ),
           ),
         );
       case '/profile':

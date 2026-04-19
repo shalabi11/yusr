@@ -23,6 +23,7 @@ part 'notification/notification_service_prayer.dart';
 part 'notification/notification_service_prayer_preview.dart';
 part 'notification/notification_service_prayer_details.dart';
 part 'notification/notification_service_persistent.dart';
+part 'notification/notification_service_download_progress.dart';
 part 'notification/notification_service_fasting.dart';
 part 'notification/notification_service_fasting_time.dart';
 part 'notification/notification_service_fasting_white_days.dart';
@@ -117,6 +118,24 @@ class NotificationService {
 
   static Future<void> cancelNotification(int id) =>
       _cancelNotification(_notificationsPlugin, id);
+
+  static Future<void> showContentDownloadProgress({
+    required int progressPercent,
+    required int downloadedBytes,
+    required int totalBytes,
+    required int bytesPerSecond,
+    bool paused = false,
+  }) => _showContentDownloadProgress(
+    notificationsPlugin: _notificationsPlugin,
+    progressPercent: progressPercent,
+    downloadedBytes: downloadedBytes,
+    totalBytes: totalBytes,
+    bytesPerSecond: bytesPerSecond,
+    paused: paused,
+  );
+
+  static Future<void> clearContentDownloadProgress() =>
+      _clearContentDownloadProgress(_notificationsPlugin);
 
   static Future<void> syncFastingReminders({PrayerTimeModel? prayerTimes}) =>
       _syncFastingReminders(

@@ -28,7 +28,8 @@ class ContentDownloadRepositoryImpl implements ContentDownloadRepository {
   }
 
   @override
-  Future<String> ensureBaseDirectory() => _localDataSource.ensureBaseDirectory();
+  Future<String> ensureBaseDirectory() =>
+      _localDataSource.ensureBaseDirectory();
 
   @override
   Future<String> ensureTypeDirectory(DownloadContentType type) {
@@ -49,6 +50,11 @@ class ContentDownloadRepositoryImpl implements ContentDownloadRepository {
   }
 
   @override
+  Stream<DownloadTaskSnapshot> observeTaskSnapshot(String taskId) {
+    return _downloaderDataSource.observeTask(taskId);
+  }
+
+  @override
   Future<void> pauseTask(String taskId) => _downloaderDataSource.pause(taskId);
 
   @override
@@ -61,7 +67,15 @@ class ContentDownloadRepositoryImpl implements ContentDownloadRepository {
     required DownloadableContentFile file,
     required String localPath,
   }) {
-    return _localDataSource.cacheDownloadedFile(file: file, localPath: localPath);
+    return _localDataSource.cacheDownloadedFile(
+      file: file,
+      localPath: localPath,
+    );
+  }
+
+  @override
+  Future<bool> isFileAlreadyDownloaded(DownloadableContentFile file) {
+    return _localDataSource.isFileCachedAndExists(file);
   }
 
   @override
@@ -81,10 +95,12 @@ class ContentDownloadRepositoryImpl implements ContentDownloadRepository {
   bool get isContentDownloaded => _localDataSource.isContentDownloaded;
 
   @override
-  bool get isQuranContentDownloaded => _localDataSource.isQuranContentDownloaded;
+  bool get isQuranContentDownloaded =>
+      _localDataSource.isQuranContentDownloaded;
 
   @override
-  bool get isAdhkarContentDownloaded => _localDataSource.isAdhkarContentDownloaded;
+  bool get isAdhkarContentDownloaded =>
+      _localDataSource.isAdhkarContentDownloaded;
 
   @override
   int get downloadedContentVersion => _localDataSource.downloadedContentVersion;

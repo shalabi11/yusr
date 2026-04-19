@@ -1,24 +1,76 @@
 import 'package:flutter_downloader/flutter_downloader.dart';
+import 'dart:isolate';
+import 'dart:async';
+import 'dart:ui';
 import 'package:yusr_app/features/content_download/domain/entities/download_task_snapshot.dart';
 import 'package:yusr_app/features/content_download/domain/entities/downloadable_content_file.dart';
 
 class BackgroundDownloaderDataSource {
   const BackgroundDownloaderDataSource();
 
+  static const String _portName = 'yusr_downloader_send_port';
+  static final ReceivePort _receivePort = ReceivePort();
+  static final StreamController<_TaskUpdate> _updatesController =
+      StreamController<_TaskUpdate>.broadcast();
+
+  static bool _isBound = false;
+  static bool _isCallbackRegistered = false;
+
+  static void _ensureStreamBinding() {
+    if (!_isBound) {
+      IsolateNameServer.removePortNameMapping(_portName);
+      IsolateNameServer.registerPortWithName(_receivePort.sendPort, _portName);
+      _receivePort.listen((dynamic data) {
+        if (data is! List<dynamic> || data.length < 3) {
+          return;
+        }
+
+        final taskId = data[0]?.toString() ?? '';
+        final statusValue = data[1] is int ? data[1] as int : -1;
+        final progress = data[2] is int ? data[2] as int : 0;
+        if (taskId.isEmpty) {
+          return;
+        }
+
+        final status =
+            (statusValue >= 0 && statusValue < DownloadTaskStatus.values.length)
+            ? DownloadTaskStatus.values[statusValue]
+            : DownloadTaskStatus.undefined;
+        _updatesController.add(
+          _TaskUpdate(
+            taskId: taskId,
+            snapshot: DownloadTaskSnapshot(
+              state: _mapStatus(status),
+              progress: progress.clamp(0, 100),
+            ),
+          ),
+        );
+      });
+      _isBound = true;
+    }
+
+    if (!_isCallbackRegistered) {
+      FlutterDownloader.registerCallback(_downloadCallback);
+      _isCallbackRegistered = true;
+    }
+  }
+
   Future<String?> enqueue({
     required DownloadableContentFile file,
     required String savedDir,
   }) {
+    _ensureStreamBinding();
     return FlutterDownloader.enqueue(
       url: file.url,
       fileName: file.name,
       savedDir: savedDir,
-      showNotification: true,
+      showNotification: false,
       openFileFromNotification: false,
     );
   }
 
   Future<DownloadTaskSnapshot> taskSnapshot(String taskId) async {
+    _ensureStreamBinding();
     final tasks = await FlutterDownloader.loadTasksWithRawQuery(
       query: "SELECT * FROM task WHERE task_id='$taskId'",
     );
@@ -38,14 +90,23 @@ class BackgroundDownloaderDataSource {
   }
 
   Future<void> pause(String taskId) async {
+    _ensureStreamBinding();
     await FlutterDownloader.pause(taskId: taskId);
   }
 
   Future<String?> resume(String taskId) {
+    _ensureStreamBinding();
     return FlutterDownloader.resume(taskId: taskId);
   }
 
-  DownloadTaskState _mapStatus(DownloadTaskStatus status) {
+  Stream<DownloadTaskSnapshot> observeTask(String taskId) {
+    _ensureStreamBinding();
+    return _updatesController.stream
+        .where((update) => update.taskId == taskId)
+        .map((update) => update.snapshot);
+  }
+
+  static DownloadTaskState _mapStatus(DownloadTaskStatus status) {
     switch (status) {
       case DownloadTaskStatus.undefined:
         return DownloadTaskState.undefined;
@@ -63,4 +124,19 @@ class BackgroundDownloaderDataSource {
         return DownloadTaskState.paused;
     }
   }
+}
+
+class _TaskUpdate {
+  const _TaskUpdate({required this.taskId, required this.snapshot});
+
+  final String taskId;
+  final DownloadTaskSnapshot snapshot;
+}
+
+@pragma('vm:entry-point')
+void _downloadCallback(String id, int status, int progress) {
+  final sendPort = IsolateNameServer.lookupPortByName(
+    BackgroundDownloaderDataSource._portName,
+  );
+  sendPort?.send([id, status, progress]);
 }

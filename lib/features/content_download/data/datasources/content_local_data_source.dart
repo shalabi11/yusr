@@ -58,6 +58,31 @@ class ContentLocalDataSource {
     });
   }
 
+  Future<bool> isFileCachedAndExists(DownloadableContentFile file) async {
+    final box = await _openBox();
+    final key = 'file_${file.id}_${file.name}';
+    final record = box.get(key);
+    if (record is! Map) {
+      return false;
+    }
+
+    final localPath = record['local_path']?.toString();
+    if (localPath == null || localPath.isEmpty) {
+      return false;
+    }
+
+    final localFile = File(localPath);
+    if (!await localFile.exists()) {
+      return false;
+    }
+
+    final expectedSize = file.size;
+    if (expectedSize <= 0) {
+      return true;
+    }
+    return (await localFile.length()) >= expectedSize;
+  }
+
   Future<void> markSelectionCompleted({
     required ContentDownloadOption option,
     required int version,
@@ -81,7 +106,8 @@ class ContentLocalDataSource {
     }
 
     await _storageService.setContentDownloaded(
-      _storageService.quranContentDownloaded,
+      _storageService.quranContentDownloaded &&
+          _storageService.adhkarContentDownloaded,
     );
   }
 

@@ -11,10 +11,17 @@ class DownloadableContentFileModel extends DownloadableContentFile {
   });
 
   factory DownloadableContentFileModel.fromMap(Map<String, dynamic> map) {
+    final parsedType = DownloadContentType.tryFromValue(
+      map['type']?.toString() ?? '',
+    );
+    if (parsedType == null) {
+      throw const FormatException('Unsupported download content type');
+    }
+
     return DownloadableContentFileModel(
       id: map['id']?.toString() ?? '',
       name: map['name']?.toString() ?? '',
-      type: DownloadContentType.fromValue(map['type']?.toString() ?? ''),
+      type: parsedType,
       url: map['url']?.toString() ?? '',
       size: (map['size'] as num?)?.toInt() ?? 0,
     );
