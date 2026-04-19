@@ -50,12 +50,18 @@ mixin PrayerTimesFetchMixin on Cubit<PrayerTimesState> {
         },
         (data) async {
           _lastFetchAt = DateTime.now();
+          final nextInfo = PrayerScheduleHelper.computeNextPrayer(
+            data.prayerTimes,
+          );
           emit(
             PrayerTimesLoaded(
               data.prayerTimes,
               data.locationName,
               _lastFetchAt!,
               data.isFromCache,
+              nextInfo.slot.key,
+              nextInfo.slot.icon,
+              PrayerScheduleHelper.formatCountdown(nextInfo.remaining),
             ),
           );
           await _syncPrayerNotifications(data.prayerTimes, data.locationName);

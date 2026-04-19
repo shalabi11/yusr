@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'daily_ayah_model.dart';
 import 'daily_ayah_remote_data_source.dart';
@@ -45,30 +46,10 @@ class DailyAyahRepository {
 
   Future<List<DailyAyah>> _loadLocalAyat() async {
     final raw = await rootBundle.loadString('assets/data/mainDataQuran.json');
-    final List<dynamic> data = jsonDecode(raw) as List<dynamic>;
-
-    final list = <DailyAyah>[];
-    for (final surahRaw in data) {
-      final surah = surahRaw as Map<String, dynamic>;
-      final surahName =
-          (surah['name'] as Map<String, dynamic>? ?? const {})['ar']
-              ?.toString() ??
-          '';
-      final verses = (surah['verses'] as List<dynamic>? ?? const []);
-      for (final verseRaw in verses) {
-        final verse = verseRaw as Map<String, dynamic>;
-        final text =
-            (verse['text'] as Map<String, dynamic>? ?? const {})['ar']
-                ?.toString() ??
-            '';
-        final hasTheme = _themes.any(text.contains);
-        if (!hasTheme) continue;
-        final number = verse['number'] as int? ?? 0;
-        list.add(DailyAyah(content: '﴿$text﴾', source: '$surahName: $number'));
-      }
-    }
-
-    _cache = list;
+    _cache = await compute(
+      _parseLocalAyat,
+      _DailyAyahParseInput(raw: raw, themes: _themes),
+    );
     return _cache!;
   }
 
@@ -87,4 +68,40 @@ class DailyAyahRepository {
     final index = daySeed % ayat.length;
     return ayat[index];
   }
+}
+
+class _DailyAyahParseInput {
+  const _DailyAyahParseInput({required this.raw, required this.themes});
+
+  final String raw;
+  final List<String> themes;
+}
+
+List<DailyAyah> _parseLocalAyat(_DailyAyahParseInput input) {
+  final data = jsonDecode(input.raw) as List<dynamic>;
+  final list = <DailyAyah>[];
+
+  for (final surahRaw in data) {
+    final surah = surahRaw as Map<String, dynamic>;
+    final surahName =
+        (surah['name'] as Map<String, dynamic>? ?? const {})['ar']
+            ?.toString() ??
+        '';
+    final verses = (surah['verses'] as List<dynamic>? ?? const []);
+    for (final verseRaw in verses) {
+      final verse = verseRaw as Map<String, dynamic>;
+      final text =
+          (verse['text'] as Map<String, dynamic>? ?? const {})['ar']
+              ?.toString() ??
+          '';
+      if (!input.themes.any(text.contains)) {
+        continue;
+      }
+
+      final number = verse['number'] as int? ?? 0;
+      list.add(DailyAyah(content: '﴿$text﴾', source: '$surahName: $number'));
+    }
+  }
+
+  return list;
 }

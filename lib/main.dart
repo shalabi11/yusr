@@ -5,6 +5,7 @@ import 'package:yusr_app/core/theme/app_theme.dart';
 import 'package:yusr_app/core/services/app_bootstrap.dart';
 import 'package:yusr_app/core/bloc/settings_cubit.dart';
 
+import 'package:yusr_app/features/content_download/presentation/cubit/content_download_cubit.dart';
 import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
 import 'package:yusr_app/injection_container.dart';
 
@@ -17,6 +18,8 @@ void main() {
 class IslamicApp extends StatelessWidget {
   const IslamicApp({super.key});
 
+  static const _appTitle = 'يُسْر';
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<AppBootstrapStatus>(
@@ -24,7 +27,7 @@ class IslamicApp extends StatelessWidget {
       builder: (context, status, _) {
         if (status != AppBootstrapStatus.ready) {
           return MaterialApp(
-            title: 'يُسْر',
+            title: _appTitle,
             debugShowCheckedModeBanner: false,
             theme: AppTheme.darkTheme,
             onGenerateRoute: AppRouter.onGenerateRoute,
@@ -42,22 +45,25 @@ class IslamicApp extends StatelessWidget {
               create: (context) =>
                   sl<PrayerTimesCubit>()..fetchPrayerTimes(force: true),
             ),
+            BlocProvider<ContentDownloadCubit>.value(
+              value: sl<ContentDownloadCubit>()..syncInitialState(),
+            ),
           ],
-          child: BlocBuilder<SettingsCubit, SettingsState>(
-            builder: (context, state) {
-              return MaterialApp(
-                key: ValueKey(state.langCode),
-                title: 'يُسْر',
-                debugShowCheckedModeBanner: false,
-                theme: AppTheme.darkTheme,
-                onGenerateRoute: AppRouter.onGenerateRoute,
-                initialRoute: '/',
-                builder: (context, child) {
+          child: MaterialApp(
+            title: _appTitle,
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.darkTheme,
+            onGenerateRoute: AppRouter.onGenerateRoute,
+            initialRoute: '/',
+            builder: (context, child) {
+              return BlocSelector<SettingsCubit, SettingsState, TextDirection>(
+                selector: (state) => state.langCode == 'ar'
+                    ? TextDirection.rtl
+                    : TextDirection.ltr,
+                builder: (context, textDirection) {
                   return Directionality(
-                    textDirection: state.langCode == 'ar'
-                        ? TextDirection.rtl
-                        : TextDirection.ltr,
-                    child: child!,
+                    textDirection: textDirection,
+                    child: child ?? const SizedBox.shrink(),
                   );
                 },
               );

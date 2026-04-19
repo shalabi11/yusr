@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:yusr_app/core/services/storage/istorage_service.dart';
@@ -16,12 +17,18 @@ part 'prayer_times_notifications_mixin.dart';
 
 class PrayerTimesCubit extends Cubit<PrayerTimesState>
     with PrayerTimesFetchMixin, PrayerTimesNotificationsMixin {
+  @override
   final PrayerTimesRepository repository;
+  @override
   final IStorageService _storageService;
+  @override
   final INotificationService _notificationService;
-  Timer? _stickyTimer;
+  Timer? _ticker;
+  @override
   Future<void>? _activeFetch;
+  @override
   DateTime? _lastFetchAt;
+  DateTime? _lastStickyRefreshAt;
 
   static const Duration _minFetchInterval = Duration(minutes: 2);
   static const List<int> _stickyRefreshIds = [2001, 2002, 2003, 2004, 2005];
@@ -31,22 +38,46 @@ class PrayerTimesCubit extends Cubit<PrayerTimesState>
     this._storageService,
     this._notificationService,
   ) : super(PrayerTimesInitial()) {
-    _startStickyRefreshTimer();
+    _startTicker();
   }
 
-  void _startStickyRefreshTimer() {
-    _stickyTimer?.cancel();
-    _stickyTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+  void _startTicker() {
+    _ticker?.cancel();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       final current = state;
       if (current is PrayerTimesLoaded) {
-        _updateStickyNotification(current.prayerTimes, current.locationName);
+        final nextInfo = PrayerScheduleHelper.computeNextPrayer(
+          current.prayerTimes,
+        );
+        final countdown = PrayerScheduleHelper.formatCountdown(
+          nextInfo.remaining,
+        );
+        if (countdown != current.countdownText ||
+            nextInfo.slot.key != current.nextPrayerKey) {
+          emit(
+            current.copyWith(
+              nextPrayerKey: nextInfo.slot.key,
+              nextPrayerIcon: nextInfo.slot.icon,
+              countdownText: countdown,
+            ),
+          );
+        }
+
+        final now = DateTime.now();
+        final shouldRefreshSticky =
+            _lastStickyRefreshAt == null ||
+            now.difference(_lastStickyRefreshAt!) >= const Duration(minutes: 1);
+        if (shouldRefreshSticky) {
+          _lastStickyRefreshAt = now;
+          _updateStickyNotification(current.prayerTimes, current.locationName);
+        }
       }
     });
   }
 
   @override
   Future<void> close() {
-    _stickyTimer?.cancel();
+    _ticker?.cancel();
     return super.close();
   }
 }

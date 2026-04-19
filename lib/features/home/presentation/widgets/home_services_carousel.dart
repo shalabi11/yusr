@@ -28,7 +28,7 @@ class HomeServicesCarousel extends StatefulWidget {
 class _HomeServicesCarouselState extends State<HomeServicesCarousel> {
   static const int _virtualItemCount = 200000;
   static const int _recenterThreshold = 1500;
-  static const Duration _autoScrollInterval = Duration(seconds: 5);
+  static const Duration _autoScrollInterval = Duration(seconds: 10);
 
   late final PageController _controller;
   Timer? _autoScrollTimer;
