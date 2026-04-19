@@ -11,7 +11,6 @@ import 'package:yusr_app/core/services/notification_service.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
 import 'package:yusr_app/core/services/storage_service.dart';
-import 'package:yusr_app/injection_container.dart';
 
 part 'reminders_screen_actions.dart';
 part 'reminders_screen_add_dialog.dart';
@@ -19,7 +18,14 @@ part 'reminders_screen_add_dialog_sheet.dart';
 part 'reminders_screen_state_helpers.dart';
 
 class RemindersScreen extends StatefulWidget {
-  const RemindersScreen({super.key});
+  const RemindersScreen({
+    required this.repository,
+    required this.adhkarRepository,
+    super.key,
+  });
+
+  final RemindersRepository repository;
+  final AdhkarRepository adhkarRepository;
 
   @override
   State<RemindersScreen> createState() => _RemindersScreenState();
@@ -27,13 +33,16 @@ class RemindersScreen extends StatefulWidget {
 
 class _RemindersScreenState extends State<RemindersScreen>
     with RemindersScreenStateHelpers {
-  final RemindersRepository _repository = sl<RemindersRepository>();
-  final AdhkarRepository _adhkarRepository = sl<AdhkarRepository>();
+  late final RemindersRepository _repository;
+  late final AdhkarRepository _adhkarRepository;
+  @override
   late List<ReminderModel> reminders;
 
   @override
   void initState() {
     super.initState();
+    _repository = widget.repository;
+    _adhkarRepository = widget.adhkarRepository;
     reminders = _repository.getReminders();
     loadAndSyncOnStart();
     WidgetsBinding.instance.addPostFrameCallback((_) {

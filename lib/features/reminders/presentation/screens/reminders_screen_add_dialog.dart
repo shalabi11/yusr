@@ -1,6 +1,6 @@
 part of 'reminders_screen.dart';
 
-extension RemindersAddDialog on _RemindersScreenState {
+extension _RemindersAddDialog on _RemindersScreenState {
   Future<void> showAddReminderDialog() async {
     final categories = await _adhkarRepository.loadCategories();
     if (!mounted) return;

@@ -17,7 +17,7 @@ mixin RemindersScreenStateHelpers on State<RemindersScreen> {
   void _removeReminderById(String id) {
     if (!mounted) return;
     setState(() {
-      reminders.removeWhere((r) => r.id == id);
+      reminders = reminders.where((r) => r.id != id).toList();
     });
   }
 
@@ -34,15 +34,25 @@ mixin RemindersScreenStateHelpers on State<RemindersScreen> {
   void _updateReminderEnabled(ReminderModel reminder, bool enabled) {
     if (!mounted) return;
     setState(() {
-      reminder.enabled = enabled;
+      reminders = reminders
+          .map(
+            (item) =>
+                item.id == reminder.id ? item.copyWith(enabled: enabled) : item,
+          )
+          .toList();
     });
   }
 
   void _updateReminderTime(ReminderModel reminder, TimeOfDay newTime) {
     if (!mounted) return;
     setState(() {
-      reminder.hour = newTime.hour;
-      reminder.minute = newTime.minute;
+      reminders = reminders
+          .map(
+            (item) => item.id == reminder.id
+                ? item.copyWith(hour: newTime.hour, minute: newTime.minute)
+                : item,
+          )
+          .toList();
     });
   }
 }

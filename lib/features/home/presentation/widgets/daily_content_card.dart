@@ -5,24 +5,23 @@ import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
 import 'package:yusr_app/features/home/data/daily_ayah_repository.dart';
-import 'package:yusr_app/injection_container.dart';
 
 class DailyContentCard extends StatefulWidget {
-  const DailyContentCard({super.key});
+  const DailyContentCard({required this.repo, super.key});
+
+  final DailyAyahRepository repo;
 
   @override
   State<DailyContentCard> createState() => _DailyContentCardState();
 }
 
 class _DailyContentCardState extends State<DailyContentCard> {
-  late final DailyAyahRepository _repo;
   late final Future<DailyAyah> _dailyAyahFuture;
 
   @override
   void initState() {
     super.initState();
-    _repo = sl<DailyAyahRepository>();
-    _dailyAyahFuture = _repo.getDailyAyah();
+    _dailyAyahFuture = widget.repo.getDailyAyah();
   }
 
   @override

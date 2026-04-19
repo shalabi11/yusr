@@ -4,9 +4,9 @@ class ReminderModel {
   final String id;
   final String titleKey;
   final String subtitleKey;
-  int hour;
-  int minute;
-  bool enabled;
+  final int hour;
+  final int minute;
+  final bool enabled;
   final int iconCodeInfo;
 
   ReminderModel({
@@ -21,6 +21,26 @@ class ReminderModel {
 
   IconData get icon => _iconFromCodePoint(iconCodeInfo);
   TimeOfDay get timeOfDay => TimeOfDay(hour: hour, minute: minute);
+
+  ReminderModel copyWith({
+    String? id,
+    String? titleKey,
+    String? subtitleKey,
+    int? hour,
+    int? minute,
+    bool? enabled,
+    int? iconCodeInfo,
+  }) {
+    return ReminderModel(
+      id: id ?? this.id,
+      titleKey: titleKey ?? this.titleKey,
+      subtitleKey: subtitleKey ?? this.subtitleKey,
+      hour: hour ?? this.hour,
+      minute: minute ?? this.minute,
+      enabled: enabled ?? this.enabled,
+      iconCodeInfo: iconCodeInfo ?? this.iconCodeInfo,
+    );
+  }
 
   static IconData _iconFromCodePoint(int codePoint) {
     if (codePoint == Icons.nightlight_round.codePoint) {

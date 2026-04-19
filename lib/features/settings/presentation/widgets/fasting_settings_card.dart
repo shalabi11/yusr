@@ -13,24 +13,25 @@ class FastingSettingsCard extends StatelessWidget {
 
   final SettingsState state;
 
-  Future<void> _syncAfterUpdate(BuildContext context) async =>
-      NotificationService.syncFastingReminders(
-        prayerTimes: _currentPrayerTimes(context),
-      );
-
   Future<void> _updateMainEnabled(BuildContext context, bool val) async {
-    await context.read<SettingsCubit>().setFastingRemindersEnabled(val);
-    await _syncAfterUpdate(context);
+    final settingsCubit = context.read<SettingsCubit>();
+    final prayerTimes = _currentPrayerTimes(context);
+    await settingsCubit.setFastingRemindersEnabled(val);
+    await NotificationService.syncFastingReminders(prayerTimes: prayerTimes);
   }
 
   Future<void> _updateWhiteDays(BuildContext context, bool val) async {
-    await context.read<SettingsCubit>().setWhiteDaysReminderEnabled(val);
-    await _syncAfterUpdate(context);
+    final settingsCubit = context.read<SettingsCubit>();
+    final prayerTimes = _currentPrayerTimes(context);
+    await settingsCubit.setWhiteDaysReminderEnabled(val);
+    await NotificationService.syncFastingReminders(prayerTimes: prayerTimes);
   }
 
   Future<void> _updateMondayThursday(BuildContext context, bool val) async {
-    await context.read<SettingsCubit>().setMondayThursdayReminderEnabled(val);
-    await _syncAfterUpdate(context);
+    final settingsCubit = context.read<SettingsCubit>();
+    final prayerTimes = _currentPrayerTimes(context);
+    await settingsCubit.setMondayThursdayReminderEnabled(val);
+    await NotificationService.syncFastingReminders(prayerTimes: prayerTimes);
   }
 
   @override

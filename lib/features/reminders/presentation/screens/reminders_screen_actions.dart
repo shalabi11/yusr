@@ -1,6 +1,6 @@
 part of 'reminders_screen.dart';
 
-extension RemindersScreenActions on _RemindersScreenState {
+extension _RemindersScreenActions on _RemindersScreenState {
   Future<void> loadAndSyncOnStart() async {
     final loaded = await _repository.loadRemindersOnStartup();
     _applyLoadedReminders(loaded);

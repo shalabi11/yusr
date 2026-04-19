@@ -1,5 +1,6 @@
 import '../models/reminder_model.dart';
 import '../../../../core/services/storage_service.dart';
+import 'package:yusr_app/core/utils/app_logger.dart';
 import '../datasources/dummy_reminders.dart';
 import 'reminders_remote_sync_service.dart';
 
@@ -19,7 +20,14 @@ class RemindersRepository {
 
     try {
       await _remoteSync?.save(reminders);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'reminders',
+        'saveReminders',
+        'Remote reminders sync failed; local reminders kept.',
+        error: error,
+        stackTrace: stackTrace,
+      );
       // Keep local storage as fallback if remote sync fails.
     }
   }
@@ -80,7 +88,14 @@ class RemindersRepository {
 
       await saveReminders(remote);
       return remote;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'reminders',
+        'loadRemindersOnStartup',
+        'Remote reminder load failed; returning local reminders.',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return local;
     }
   }
