@@ -39,6 +39,10 @@ import 'package:yusr_app/features/reminders/data/repositories/reminders_reposito
 import 'package:yusr_app/features/reminders/data/repositories/reminders_remote_sync_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+part 'injection_container_core.dart';
+part 'injection_container_features.dart';
+part 'injection_container_cubits.dart';
+
 final sl = GetIt.instance;
 
 Future<void> initDependencies() async {
@@ -49,189 +53,12 @@ Future<void> initDependencies() async {
   );
   final prefs = await SharedPreferences.getInstance();
 
-  if (!sl.isRegistered<IStorageService>()) {
-    sl.registerLazySingleton<IStorageService>(() => StorageServiceImpl(prefs));
-  }
-  if (!sl.isRegistered<INotificationService>()) {
-    sl.registerLazySingleton<INotificationService>(
-      () => NotificationServiceAdapter(),
-    );
-  }
-  if (SupabaseBootstrap.isEnabled && !sl.isRegistered<SupabaseClient>()) {
-    sl.registerLazySingleton<SupabaseClient>(() => Supabase.instance.client);
-  }
-  if (!sl.isRegistered<Dio>()) {
-    sl.registerLazySingleton<Dio>(
-      () => Dio(
-        BaseOptions(
-          connectTimeout: const Duration(seconds: 20),
-          receiveTimeout: const Duration(seconds: 45),
-        ),
-      ),
-    );
-  }
-
-  if (!sl.isRegistered<ContentRemoteDataSource>()) {
-    sl.registerLazySingleton<ContentRemoteDataSource>(
-      () => ContentRemoteDataSource(
-        sl.isRegistered<SupabaseClient>() ? sl<SupabaseClient>() : null,
-      ),
-    );
-  }
-  if (!sl.isRegistered<ContentLocalDataSource>()) {
-    sl.registerLazySingleton<ContentLocalDataSource>(
-      () => ContentLocalDataSource(sl<IStorageService>()),
-    );
-  }
-  if (!sl.isRegistered<BackgroundDownloaderDataSource>()) {
-    sl.registerLazySingleton<BackgroundDownloaderDataSource>(
-      () => const BackgroundDownloaderDataSource(),
-    );
-  }
-  if (!sl.isRegistered<ContentDownloadRepository>()) {
-    sl.registerLazySingleton<ContentDownloadRepository>(
-      () => ContentDownloadRepositoryImpl(
-        remoteDataSource: sl<ContentRemoteDataSource>(),
-        localDataSource: sl<ContentLocalDataSource>(),
-        downloaderDataSource: sl<BackgroundDownloaderDataSource>(),
-      ),
-    );
-  }
-  if (!sl.isRegistered<DownloadContentUseCase>()) {
-    sl.registerLazySingleton<DownloadContentUseCase>(
-      () => DownloadContentUseCase(sl<ContentDownloadRepository>()),
-    );
-  }
-  if (!sl.isRegistered<PauseDownloadUseCase>()) {
-    sl.registerLazySingleton<PauseDownloadUseCase>(
-      () => PauseDownloadUseCase(sl<ContentDownloadRepository>()),
-    );
-  }
-  if (!sl.isRegistered<ResumeDownloadUseCase>()) {
-    sl.registerLazySingleton<ResumeDownloadUseCase>(
-      () => ResumeDownloadUseCase(sl<ContentDownloadRepository>()),
-    );
-  }
-
-  if (assistantWebhookUrl.isNotEmpty &&
-      !sl.isRegistered<AssistantRemoteDataSource>()) {
-    sl.registerLazySingleton<AssistantRemoteDataSource>(
-      () => AssistantRemoteDataSource(
-        dio: sl<Dio>(),
-        webhookUrl: assistantWebhookUrl,
-      ),
-    );
-  }
-
-  if (assistantWebhookUrl.isNotEmpty &&
-      !sl.isRegistered<AssistantRepository>()) {
-    sl.registerLazySingleton<AssistantRepository>(
-      () => AssistantRepositoryImpl(sl<AssistantRemoteDataSource>()),
-    );
-  }
-
-  if (assistantWebhookUrl.isNotEmpty &&
-      !sl.isRegistered<SendMessageUseCase>()) {
-    sl.registerLazySingleton<SendMessageUseCase>(
-      () => SendMessageUseCase(sl<AssistantRepository>()),
-    );
-  }
-  if (!sl.isRegistered<HandleAgentResponseUseCase>()) {
-    sl.registerLazySingleton<HandleAgentResponseUseCase>(
-      HandleAgentResponseUseCase.new,
-    );
-  }
+  _registerCoreServices(prefs);
+  _registerContentDownloadFeature();
+  _registerAssistantFeature(assistantWebhookUrl);
   StorageService.bind(sl<IStorageService>());
-
-  // Repositories
-  if (!sl.isRegistered<PrayerTimesRepository>()) {
-    sl.registerLazySingleton<PrayerTimesRepository>(
-      () => PrayerTimesRepository(storageService: sl<IStorageService>()),
-    );
-  }
-  if (!sl.isRegistered<RemindersRepository>()) {
-    sl.registerLazySingleton<RemindersRepository>(
-      () => RemindersRepository(
-        remoteSync: sl.isRegistered<SupabaseClient>()
-            ? RemindersRemoteSyncService(sl<SupabaseClient>())
-            : null,
-      ),
-    );
-  }
-  if (!sl.isRegistered<AdhkarRepository>()) {
-    sl.registerLazySingleton<AdhkarRepository>(
-      () => AdhkarRepository(
-        remoteDataSource: sl.isRegistered<SupabaseClient>()
-            ? AdhkarRemoteDataSource(sl<SupabaseClient>())
-            : null,
-      ),
-    );
-  }
-  if (!sl.isRegistered<QuranRepository>()) {
-    sl.registerLazySingleton<QuranRepository>(
-      () => QuranRepository(
-        remoteSync: sl.isRegistered<SupabaseClient>()
-            ? QuranRemoteSyncService(sl<SupabaseClient>())
-            : null,
-        catalogRemote: sl.isRegistered<SupabaseClient>()
-            ? QuranCatalogRemoteService(sl<SupabaseClient>())
-            : null,
-      ),
-    );
-  }
-  if (!sl.isRegistered<DailyAyahRepository>()) {
-    sl.registerLazySingleton<DailyAyahRepository>(
-      () => DailyAyahRepository(
-        remoteDataSource: sl.isRegistered<SupabaseClient>()
-            ? DailyAyahRemoteDataSource(sl<SupabaseClient>())
-            : null,
-      ),
-    );
-  }
-
-  // Cubits
-  if (!sl.isRegistered<SettingsCubit>()) {
-    sl.registerFactory<SettingsCubit>(
-      () => SettingsCubit(
-        sl<IStorageService>(),
-        sl<INotificationService>(),
-        supabaseClient: sl.isRegistered<SupabaseClient>()
-            ? sl<SupabaseClient>()
-            : null,
-      ),
-    );
-  }
-  if (!sl.isRegistered<PrayerTimesCubit>()) {
-    sl.registerFactory<PrayerTimesCubit>(
-      () => PrayerTimesCubit(
-        sl<PrayerTimesRepository>(),
-        sl<IStorageService>(),
-        sl<INotificationService>(),
-      ),
-    );
-  }
-
-  if (!sl.isRegistered<ChatCubit>()) {
-    sl.registerFactory<ChatCubit>(
-      () => ChatCubit(
-        sl.isRegistered<SendMessageUseCase>()
-            ? sl<SendMessageUseCase>()
-            : const SendMessageUseCase(_UnavailableAssistantRepository()),
-        sl<HandleAgentResponseUseCase>(),
-      ),
-    );
-  }
-
-  if (!sl.isRegistered<ContentDownloadCubit>()) {
-    sl.registerFactory<ContentDownloadCubit>(
-      () => ContentDownloadCubit(
-        sl<ContentDownloadRepository>(),
-        sl<DownloadContentUseCase>(),
-        sl<PauseDownloadUseCase>(),
-        sl<ResumeDownloadUseCase>(),
-      ),
-    );
-  }
+  _registerRepositories();
+  _registerCubits();
 }
 
 class _UnavailableAssistantRepository implements AssistantRepository {

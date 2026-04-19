@@ -28,7 +28,14 @@ mixin SettingsCubitStorageSync on Cubit<SettingsState> {
 
     try {
       await _remoteSync.save(snapshot);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'settings',
+        'syncStateToRemoteInternal',
+        'Failed to sync settings snapshot to remote source.',
+        error: error,
+        stackTrace: stackTrace,
+      );
       // Local state remains primary fallback when network/database fails.
     }
   }

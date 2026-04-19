@@ -27,11 +27,18 @@ class StorageServiceImpl
       _ui = StorageUiModule(prefs),
       _fasting = StorageFastingModule(prefs);
 
+  @override
   final StorageCoreModule _core;
+  @override
   final StorageLanguageModule _language;
+  @override
   final StoragePrayerModule _prayer;
+  @override
   final StorageLocationModule _location;
+  @override
   final StorageQuranModule _quran;
+  @override
   final StorageUiModule _ui;
+  @override
   final StorageFastingModule _fasting;
 }

@@ -4,6 +4,7 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:yusr_app/core/utils/app_logger.dart';
 import 'package:yusr_app/core/services/notification_service.dart';
 import 'package:yusr_app/core/services/supabase/supabase_bootstrap.dart';
 import 'package:yusr_app/features/reminders/data/repositories/reminders_repository.dart';
@@ -16,9 +17,8 @@ class AppBootstrap {
 
   static final AppBootstrap instance = AppBootstrap._();
 
-  final ValueNotifier<AppBootstrapStatus> status = ValueNotifier<AppBootstrapStatus>(
-    AppBootstrapStatus.idle,
-  );
+  final ValueNotifier<AppBootstrapStatus> status =
+      ValueNotifier<AppBootstrapStatus>(AppBootstrapStatus.idle);
   final Completer<void> _readyCompleter = Completer<void>();
 
   Object? _error;
@@ -43,26 +43,60 @@ class AppBootstrap {
 
       // Tune cache defaults for image-heavy screens like Quran page viewer.
       final imageCache = PaintingBinding.instance.imageCache;
-      imageCache.maximumSize = 250;
-      imageCache.maximumSizeBytes = 140 << 20;
+      imageCache.maximumSize = 180;
+      imageCache.maximumSizeBytes = 96 << 20;
 
       try {
         await NotificationService.init();
-      } catch (_) {
+      } catch (error, stackTrace) {
+        AppLogger.warning(
+          'bootstrap',
+          'start',
+          'Notification init failed. Continuing startup.',
+          error: error,
+        );
+        AppLogger.error(
+          'bootstrap',
+          'start',
+          'Stack trace for notification init failure.',
+          error: error,
+          stackTrace: stackTrace,
+        );
         // Notifications should not block app usability.
       }
 
       try {
-        final reminders = await sl<RemindersRepository>().loadRemindersOnStartup();
+        final reminders = await sl<RemindersRepository>()
+            .loadRemindersOnStartup();
         await NotificationService.syncReminders(reminders);
         await NotificationService.syncFastingReminders();
-      } catch (_) {
+      } catch (error, stackTrace) {
+        AppLogger.warning(
+          'bootstrap',
+          'start',
+          'Reminder sync failed. Continuing startup.',
+          error: error,
+        );
+        AppLogger.error(
+          'bootstrap',
+          'start',
+          'Stack trace for reminder sync failure.',
+          error: error,
+          stackTrace: stackTrace,
+        );
         // Reminder sync should not block app usability.
       }
 
       status.value = AppBootstrapStatus.ready;
-    } catch (e) {
-      _error = e;
+    } catch (error, stackTrace) {
+      _error = error;
+      AppLogger.error(
+        'bootstrap',
+        'start',
+        'App bootstrap failed.',
+        error: error,
+        stackTrace: stackTrace,
+      );
       status.value = AppBootstrapStatus.failed;
     } finally {
       if (!_readyCompleter.isCompleted) {

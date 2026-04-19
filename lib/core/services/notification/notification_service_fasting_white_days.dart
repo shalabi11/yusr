@@ -54,8 +54,9 @@ Future<void> _scheduleOneOffFastingNotification({
 }) async {
   final now = tz.TZDateTime.now(tz.local);
   var candidate = scheduledDate;
-  if (!candidate.isAfter(now))
+  if (!candidate.isAfter(now)) {
     candidate = candidate.add(const Duration(days: 1));
+  }
 
   const details = NotificationDetails(
     android: AndroidNotificationDetails(

@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:yusr_app/core/services/storage/istorage_service.dart';
+import 'package:yusr_app/core/utils/app_logger.dart';
 
 import '../services/notification_service.dart';
 import '../localization/app_localizations.dart';
@@ -37,9 +38,13 @@ class SettingsCubit extends Cubit<SettingsState>
     AppLocalizations.currentLang = state.langCode;
   }
 
+  @override
   final IStorageService _storageService;
+  @override
   final INotificationService _notificationService;
+  @override
   final SettingsRemoteSyncService _remoteSync;
+  @override
   bool _isApplyingRemoteState = false;
 
   Future<void> loadFromRemoteOnStartup() async {
@@ -63,7 +68,14 @@ class SettingsCubit extends Cubit<SettingsState>
       } finally {
         _isApplyingRemoteState = false;
       }
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'settings',
+        'loadFromRemoteOnStartup',
+        'Failed to load settings from remote source; local state is retained.',
+        error: error,
+        stackTrace: stackTrace,
+      );
       // Keep local settings as source of truth if remote load fails.
     }
   }
