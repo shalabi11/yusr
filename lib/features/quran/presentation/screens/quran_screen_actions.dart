@@ -3,10 +3,17 @@ part of 'quran_screen.dart';
 extension QuranScreenActions on QuranScreenState {
   Future<void> loadData() async {
     try {
-      final surahs = await widget.repo.loadSurahs();
-      await widget.repo.syncProgressOnStartup();
-      final lastRead = widget.repo.getLastRead();
-      _applyLoadedData(surahs, lastRead);
+      final surahs = await widget.useCases.loadSurahs();
+      unawaited(widget.useCases.primeSmartSearchIndex(surahs));
+      final localPageImagePaths = await widget.useCases
+          .loadLocalPageImagePaths();
+      await widget.useCases.syncProgressOnStartup();
+      final lastRead = widget.useCases.getLastRead();
+      _applyLoadedData(
+        surahs,
+        lastRead,
+        localPageImagePaths: localPageImagePaths,
+      );
     } catch (error, stackTrace) {
       AppLogger.error(
         'quran',
@@ -15,7 +22,7 @@ extension QuranScreenActions on QuranScreenState {
         error: error,
         stackTrace: stackTrace,
       );
-      _applyLoadedData(const <QuranSurah>[], widget.repo.getLastRead());
+      _applyLoadedData(const <QuranSurah>[], widget.useCases.getLastRead());
     }
   }
 

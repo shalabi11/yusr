@@ -21,7 +21,7 @@ extension QuranScreenAppBar on QuranScreenState {
               MaterialPageRoute(
                 builder: (_) => QuranPageViewerScreen(
                   initialPage: 1,
-                  repo: widget.repo,
+                  useCases: widget.useCases,
                   showPageTitle: false,
                 ),
               ),

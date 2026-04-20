@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
 import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
+import 'package:yusr_app/features/quran/domain/usecases/quran_use_cases.dart';
+import 'package:yusr_app/features/quran/presentation/models/quran_offline_availability.dart';
 import 'package:yusr_app/features/quran/presentation/widgets/quran_surah_tab.dart';
 
 class FakeQuranRepository extends QuranRepository {
@@ -32,8 +34,12 @@ void main() {
             surahs: const <QuranSurah>[surah],
             search: '',
             matchedPreviewBySurah: const <int, String>{},
+            offlineAvailabilityBySurah: const <int, QuranOfflineAvailability>{
+              1: QuranOfflineAvailability.full,
+            },
             readAsText: true,
-            repo: FakeQuranRepository(),
+            isArabic: true,
+            useCases: QuranUseCases(FakeQuranRepository()),
             onReload: () async {},
           ),
         ),

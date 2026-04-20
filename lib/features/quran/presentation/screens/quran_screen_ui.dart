@@ -1,7 +1,7 @@
 part of 'quran_screen.dart';
 
 extension QuranScreenUi on QuranScreenState {
-  Widget buildQuranBody(bool readAsText) {
+  Widget buildQuranBody(bool readAsText, {required bool isArabic}) {
     if (_loading) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.accent),
@@ -62,7 +62,9 @@ extension QuranScreenUi on QuranScreenState {
             controller: _searchController,
             onChanged: _updateSearch,
             decoration: InputDecoration(
-              hintText: 'ابحث بالسورة أو نص الآية...',
+              hintText: isArabic
+                  ? 'ابحث بكلمة أو موضوع (topic:الصبر)...'
+                  : 'Search by keyword or topic (topic:patience)...',
               prefixIcon: const Icon(Icons.search),
               suffixIcon: _search.isEmpty
                   ? null
@@ -85,12 +87,14 @@ extension QuranScreenUi on QuranScreenState {
                   surahs: _filteredSurahs,
                   search: _search,
                   matchedPreviewBySurah: _matchedPreviewBySurah,
+                  offlineAvailabilityBySurah: _offlineAvailabilityBySurah,
                   readAsText: readAsText,
-                  repo: widget.repo,
+                  isArabic: isArabic,
+                  useCases: widget.useCases,
                   onReload: loadData,
                 ),
-                QuranJuzTab(repo: widget.repo, onReload: loadData),
-                QuranPagesTab(repo: widget.repo),
+                QuranJuzTab(useCases: widget.useCases, onReload: loadData),
+                QuranPagesTab(useCases: widget.useCases),
                 QuranKhatmaTab(
                   lastRead: _lastRead,
                   daysController: _daysController,

@@ -2,14 +2,14 @@ part of 'reminders_screen.dart';
 
 extension _RemindersScreenActions on _RemindersScreenState {
   Future<void> loadAndSyncOnStart() async {
-    final loaded = await _repository.loadRemindersOnStartup();
+    final loaded = await _remindersUseCases.loadRemindersOnStartup();
     _applyLoadedReminders(loaded);
 
     await NotificationService.syncReminders(reminders);
   }
 
   Future<void> saveAndSyncData() async {
-    await _repository.saveReminders(reminders);
+    await _remindersUseCases.saveReminders(reminders);
     await NotificationService.syncReminders(reminders);
   }
 

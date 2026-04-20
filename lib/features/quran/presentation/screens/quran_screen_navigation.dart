@@ -26,7 +26,8 @@ extension QuranScreenNavigation on QuranScreenState {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => QuranReaderScreen(surah: surah, repo: widget.repo),
+          builder: (_) =>
+              QuranReaderScreen(surah: surah, useCases: widget.useCases),
         ),
       );
     } else {
@@ -36,7 +37,7 @@ extension QuranScreenNavigation on QuranScreenState {
         MaterialPageRoute(
           builder: (_) => QuranPageViewerScreen(
             initialPage: _lastRead!.pageNumber,
-            repo: widget.repo,
+            useCases: widget.useCases,
             showPageTitle: false,
           ),
         ),
@@ -63,14 +64,14 @@ extension QuranScreenNavigation on QuranScreenState {
         parentContext: context,
         surahs: _surahs,
         readAsText: readAsText,
-        repo: widget.repo,
+        useCases: widget.useCases,
         onReload: loadData,
       ),
     );
   }
 
   Future<void> openBookmarksSheet(bool readAsText) async {
-    final bookmarks = widget.repo.getBookmarks();
+    final bookmarks = widget.useCases.getBookmarks();
     if (bookmarks.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('لا توجد علامات مرجعية محفوظة بعد')),
@@ -85,7 +86,7 @@ extension QuranScreenNavigation on QuranScreenState {
       builder: (_) => QuranBookmarksSheet(
         parentContext: context,
         readAsText: readAsText,
-        repo: widget.repo,
+        useCases: widget.useCases,
         surahs: _surahs,
         onReload: loadData,
       ),

@@ -4,9 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yusr_app/core/error/failures.dart';
 import 'package:yusr_app/features/home/data/daily_ayah_repository.dart';
+import 'package:yusr_app/features/home/domain/usecases/daily_ayah_use_cases.dart';
 import 'package:yusr_app/features/home/presentation/screens/home_screen.dart';
 import 'package:yusr_app/features/prayer_times/data/models/prayer_time_model.dart';
 import 'package:yusr_app/features/prayer_times/data/repositories/prayer_times_repository.dart';
+import 'package:yusr_app/features/prayer_times/domain/prayer_countdown_service.dart';
 import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
 
 import '../../support/fake_notification_service.dart';
@@ -57,13 +59,16 @@ void main() {
       repo,
       FakeStorageService(),
       FakeNotificationService(),
+      PrayerCountdownService(),
     );
 
     await tester.pumpWidget(
       BlocProvider<PrayerTimesCubit>.value(
         value: cubit,
         child: MaterialApp(
-          home: HomeScreen(dailyAyahRepository: FakeDailyAyahRepository()),
+          home: HomeScreen(
+            dailyAyahUseCases: DailyAyahUseCases(FakeDailyAyahRepository()),
+          ),
         ),
       ),
     );

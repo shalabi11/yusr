@@ -3,9 +3,9 @@ import 'package:yusr_app/core/widgets/app_radial_background.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/utils/time_picker_util.dart';
 import 'package:yusr_app/features/adhkar/data/models/adhkar_models.dart';
-import 'package:yusr_app/features/adhkar/data/repositories/adhkar_repository.dart';
+import 'package:yusr_app/features/adhkar/domain/usecases/adhkar_use_cases.dart';
 import 'package:yusr_app/features/reminders/data/models/reminder_model.dart';
-import 'package:yusr_app/features/reminders/data/repositories/reminders_repository.dart';
+import 'package:yusr_app/features/reminders/domain/usecases/reminders_use_cases.dart';
 import 'package:yusr_app/features/reminders/presentation/widgets/reminders_list_view.dart';
 import 'package:yusr_app/core/services/notification_service.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
@@ -19,13 +19,13 @@ part 'reminders_screen_state_helpers.dart';
 
 class RemindersScreen extends StatefulWidget {
   const RemindersScreen({
-    required this.repository,
-    required this.adhkarRepository,
+    required this.remindersUseCases,
+    required this.adhkarUseCases,
     super.key,
   });
 
-  final RemindersRepository repository;
-  final AdhkarRepository adhkarRepository;
+  final RemindersUseCases remindersUseCases;
+  final AdhkarUseCases adhkarUseCases;
 
   @override
   State<RemindersScreen> createState() => _RemindersScreenState();
@@ -33,17 +33,17 @@ class RemindersScreen extends StatefulWidget {
 
 class _RemindersScreenState extends State<RemindersScreen>
     with RemindersScreenStateHelpers {
-  late final RemindersRepository _repository;
-  late final AdhkarRepository _adhkarRepository;
+  late final RemindersUseCases _remindersUseCases;
+  late final AdhkarUseCases _adhkarUseCases;
   @override
   late List<ReminderModel> reminders;
 
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository;
-    _adhkarRepository = widget.adhkarRepository;
-    reminders = _repository.getReminders();
+    _remindersUseCases = widget.remindersUseCases;
+    _adhkarUseCases = widget.adhkarUseCases;
+    reminders = _remindersUseCases.getReminders();
     loadAndSyncOnStart();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       showSwipeHintIfNeeded();

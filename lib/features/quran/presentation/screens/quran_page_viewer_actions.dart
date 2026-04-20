@@ -2,18 +2,18 @@ part of 'quran_page_viewer_screen.dart';
 
 extension _QuranPageViewerActions on _QuranPageViewerScreenState {
   Future<void> _loadPageMetaByPage() async {
-    final map = await widget.repo.loadPageMetaByPage();
+    final map = await widget.useCases.loadPageMetaByPage();
     if (!mounted) return;
     _replacePageMeta(map);
   }
 
   Future<void> _bookmarkCurrentPage() async {
-    final fromPage = await widget.repo.getLastReadForPage(_currentPage);
+    final fromPage = await widget.useCases.getLastReadForPage(_currentPage);
     if (fromPage != null) {
-      await widget.repo.addBookmark(fromPage);
+      await widget.useCases.addBookmark(fromPage);
     } else {
-      final previous = widget.repo.getLastRead();
-      await widget.repo.saveLastRead(
+      final previous = widget.useCases.getLastRead();
+      await widget.useCases.saveLastRead(
         QuranLastRead(
           surahNumber: previous?.surahNumber ?? 1,
           verseNumber: previous?.verseNumber ?? 1,

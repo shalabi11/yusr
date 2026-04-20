@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
-import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
+import 'package:yusr_app/features/quran/domain/usecases/quran_use_cases.dart';
 
 import 'quran_quick_jump_form.dart';
 import 'quran_quick_jump_nav.dart';
@@ -10,7 +10,7 @@ class QuranQuickJumpSheet extends StatefulWidget {
     required this.parentContext,
     required this.surahs,
     required this.readAsText,
-    required this.repo,
+    required this.useCases,
     required this.onReload,
     super.key,
   });
@@ -18,7 +18,7 @@ class QuranQuickJumpSheet extends StatefulWidget {
   final BuildContext parentContext;
   final List<QuranSurah> surahs;
   final bool readAsText;
-  final QuranRepository repo;
+  final QuranUseCases useCases;
   final Future<void> Function() onReload;
 
   @override
@@ -57,21 +57,21 @@ class _QuranQuickJumpSheetState extends State<QuranQuickJumpSheet> {
         parentContext: widget.parentContext,
         surahs: widget.surahs,
         readAsText: widget.readAsText,
-        repo: widget.repo,
+        useCases: widget.useCases,
         onReload: widget.onReload,
         input: _surahController.text,
       ),
       onGoToJuz: () => goToJuzJump(
         sheetContext: context,
         parentContext: widget.parentContext,
-        repo: widget.repo,
+        useCases: widget.useCases,
         onReload: widget.onReload,
         input: _juzController.text,
       ),
       onGoToPage: () => goToPageJump(
         sheetContext: context,
         parentContext: widget.parentContext,
-        repo: widget.repo,
+        useCases: widget.useCases,
         onReload: widget.onReload,
         input: _pageController.text,
       ),

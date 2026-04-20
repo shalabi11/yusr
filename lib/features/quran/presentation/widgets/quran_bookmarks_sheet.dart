@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
-import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
+import 'package:yusr_app/features/quran/domain/usecases/quran_use_cases.dart';
 import 'package:yusr_app/features/quran/presentation/screens/quran_page_viewer_screen.dart';
 import 'package:yusr_app/features/quran/presentation/screens/quran_reader_screen.dart';
 
@@ -10,7 +10,7 @@ class QuranBookmarksSheet extends StatefulWidget {
   const QuranBookmarksSheet({
     required this.parentContext,
     required this.readAsText,
-    required this.repo,
+    required this.useCases,
     required this.surahs,
     required this.onReload,
     super.key,
@@ -18,7 +18,7 @@ class QuranBookmarksSheet extends StatefulWidget {
 
   final BuildContext parentContext;
   final bool readAsText;
-  final QuranRepository repo;
+  final QuranUseCases useCases;
   final List<QuranSurah> surahs;
   final Future<void> Function() onReload;
 
@@ -32,7 +32,7 @@ class _QuranBookmarksSheetState extends State<QuranBookmarksSheet> {
   @override
   void initState() {
     super.initState();
-    _bookmarks = widget.repo.getBookmarks();
+    _bookmarks = widget.useCases.getBookmarks();
   }
 
   @override
@@ -71,7 +71,8 @@ class _QuranBookmarksSheetState extends State<QuranBookmarksSheet> {
       );
       await Navigator.of(widget.parentContext).push(
         MaterialPageRoute(
-          builder: (_) => QuranReaderScreen(surah: surah, repo: widget.repo),
+          builder: (_) =>
+              QuranReaderScreen(surah: surah, useCases: widget.useCases),
         ),
       );
     } else {
@@ -79,7 +80,7 @@ class _QuranBookmarksSheetState extends State<QuranBookmarksSheet> {
         MaterialPageRoute(
           builder: (_) => QuranPageViewerScreen(
             initialPage: bookmark.pageNumber,
-            repo: widget.repo,
+            useCases: widget.useCases,
             showPageTitle: false,
           ),
         ),
@@ -91,7 +92,7 @@ class _QuranBookmarksSheetState extends State<QuranBookmarksSheet> {
   }
 
   Future<void> _deleteBookmark(QuranBookmark bookmark) async {
-    await widget.repo.removeBookmark(bookmark.id);
+    await widget.useCases.removeBookmark(bookmark.id);
     if (!mounted) return;
 
     setState(() {

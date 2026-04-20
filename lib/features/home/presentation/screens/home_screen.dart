@@ -6,16 +6,16 @@ import 'package:yusr_app/features/home/presentation/widgets/home_header.dart';
 import 'package:yusr_app/features/home/presentation/widgets/daily_content_card.dart';
 import 'package:yusr_app/features/home/presentation/widgets/home_services_carousel.dart';
 import 'package:yusr_app/features/home/presentation/widgets/next_prayer_card.dart';
-import 'package:yusr_app/features/home/data/daily_ayah_repository.dart';
+import 'package:yusr_app/features/home/domain/usecases/daily_ayah_use_cases.dart';
 import 'package:yusr_app/features/content_download/presentation/widgets/content_download_status_chip.dart';
 import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({required this.dailyAyahRepository, super.key});
+  const HomeScreen({required this.dailyAyahUseCases, super.key});
 
-  final DailyAyahRepository dailyAyahRepository;
+  final DailyAyahUseCases dailyAyahUseCases;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const ContentDownloadStatusChip(bottomSpacing: 14),
                       DailyContentCard(
                         key: _dailyContentKey,
-                        repo: widget.dailyAyahRepository,
+                        useCases: widget.dailyAyahUseCases,
                       ),
                       const SizedBox(height: 30),
                       Text(

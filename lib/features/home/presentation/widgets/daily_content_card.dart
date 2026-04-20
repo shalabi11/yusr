@@ -5,11 +5,12 @@ import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
 import 'package:yusr_app/features/home/data/daily_ayah_repository.dart';
+import 'package:yusr_app/features/home/domain/usecases/daily_ayah_use_cases.dart';
 
 class DailyContentCard extends StatefulWidget {
-  const DailyContentCard({required this.repo, super.key});
+  const DailyContentCard({required this.useCases, super.key});
 
-  final DailyAyahRepository repo;
+  final DailyAyahUseCases useCases;
 
   @override
   State<DailyContentCard> createState() => _DailyContentCardState();
@@ -21,7 +22,7 @@ class _DailyContentCardState extends State<DailyContentCard> {
   @override
   void initState() {
     super.initState();
-    _dailyAyahFuture = widget.repo.getDailyAyah();
+    _dailyAyahFuture = widget.useCases.getDailyAyah();
   }
 
   @override

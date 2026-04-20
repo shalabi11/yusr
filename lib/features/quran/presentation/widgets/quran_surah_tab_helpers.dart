@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
-import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
+import 'package:yusr_app/features/quran/domain/usecases/quran_use_cases.dart';
 import 'package:yusr_app/features/quran/presentation/screens/quran_page_viewer_screen.dart';
 import 'package:yusr_app/features/quran/presentation/screens/quran_reader_screen.dart';
 
@@ -21,20 +21,20 @@ Future<void> openSurah(
   BuildContext context, {
   required QuranSurah surah,
   required bool readAsText,
-  required QuranRepository repo,
+  required QuranUseCases useCases,
   required Future<void> Function() onReload,
 }) async {
   if (readAsText) {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => QuranReaderScreen(surah: surah, repo: repo),
+        builder: (_) => QuranReaderScreen(surah: surah, useCases: useCases),
       ),
     );
   } else {
     int? initialPage = surah.verses.isEmpty ? null : surah.verses.first.page;
     if (initialPage == null || initialPage < 1 || initialPage > 604) {
-      final pages = await repo.pagesForSurah(surah.number);
+      final pages = await useCases.pagesForSurah(surah.number);
       if (!context.mounted || pages.isEmpty) return;
       initialPage = pages.first;
     }
@@ -46,7 +46,7 @@ Future<void> openSurah(
       MaterialPageRoute(
         builder: (_) => QuranPageViewerScreen(
           initialPage: targetPage,
-          repo: repo,
+          useCases: useCases,
           showPageTitle: false,
         ),
       ),

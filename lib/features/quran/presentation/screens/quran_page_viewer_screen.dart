@@ -1,10 +1,11 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
-import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
+import 'package:yusr_app/features/quran/domain/usecases/quran_use_cases.dart';
 
 import 'quran_page_viewer_widgets.dart';
 
@@ -15,12 +16,12 @@ class QuranPageViewerScreen extends StatefulWidget {
   final int initialPage;
   final List<int>? pages;
   final bool showPageTitle;
-  final QuranRepository repo;
+  final QuranUseCases useCases;
 
   const QuranPageViewerScreen({
     super.key,
     required this.initialPage,
-    required this.repo,
+    required this.useCases,
     this.pages,
     this.showPageTitle = false,
   });
@@ -80,7 +81,7 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
       return FileImage(File(localPath));
     }
     if (remoteUrl != null && remoteUrl.isNotEmpty) {
-      return NetworkImage(remoteUrl);
+      return CachedNetworkImageProvider(remoteUrl);
     }
     return null;
   }
@@ -144,11 +145,11 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
         : _pages.first;
     _currentPage = initial;
     _controller = PageController(initialPage: _pages.indexOf(initial));
-    final bookmarks = widget.repo.getBookmarks();
+    final bookmarks = widget.useCases.getBookmarks();
     _savedPages
       ..clear()
       ..addAll(bookmarks.map((b) => b.pageNumber));
-    final lastReadPage = widget.repo.getLastRead()?.pageNumber;
+    final lastReadPage = widget.useCases.getLastRead()?.pageNumber;
     if (lastReadPage != null) _savedPages.add(lastReadPage);
     _loadPageMetaByPage();
     _loadLocalPageImages();
@@ -160,14 +161,14 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
   }
 
   Future<void> _loadLocalPageImages() async {
-    final map = await widget.repo.loadLocalPageImagePaths();
+    final map = await widget.useCases.loadLocalPageImagePaths();
     if (!mounted || map.isEmpty) return;
     _replaceLocalPageImagePaths(map);
     _precacheAroundPage(_currentPage);
   }
 
   Future<void> _loadRemotePageImages() async {
-    final map = await widget.repo.loadPageImageUrls();
+    final map = await widget.useCases.loadPageImageUrls();
     if (!mounted || map.isEmpty) return;
     _replacePageImageUrls(map);
     _precacheAroundPage(_currentPage);

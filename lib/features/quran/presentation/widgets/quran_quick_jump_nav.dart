@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
-import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
+import 'package:yusr_app/features/quran/domain/usecases/quran_use_cases.dart';
 import 'package:yusr_app/features/quran/presentation/screens/quran_page_viewer_screen.dart';
 import 'package:yusr_app/features/quran/presentation/screens/quran_reader_screen.dart';
 
@@ -9,7 +9,7 @@ Future<void> goToSurahJump({
   required BuildContext parentContext,
   required List<QuranSurah> surahs,
   required bool readAsText,
-  required QuranRepository repo,
+  required QuranUseCases useCases,
   required Future<void> Function() onReload,
   required String input,
 }) async {
@@ -36,13 +36,13 @@ Future<void> goToSurahJump({
   if (readAsText) {
     await Navigator.of(parentContext).push(
       MaterialPageRoute(
-        builder: (_) => QuranReaderScreen(surah: surah, repo: repo),
+        builder: (_) => QuranReaderScreen(surah: surah, useCases: useCases),
       ),
     );
   } else {
     int? initialPage = surah.verses.isEmpty ? null : surah.verses.first.page;
     if (initialPage == null || initialPage < 1 || initialPage > 604) {
-      final pages = await repo.pagesForSurah(surahNumber);
+      final pages = await useCases.pagesForSurah(surahNumber);
       if (!parentContext.mounted || pages.isEmpty) return;
       initialPage = pages.first;
     }
@@ -53,7 +53,7 @@ Future<void> goToSurahJump({
       MaterialPageRoute(
         builder: (_) => QuranPageViewerScreen(
           initialPage: targetPage,
-          repo: repo,
+          useCases: useCases,
           showPageTitle: false,
         ),
       ),
@@ -67,7 +67,7 @@ Future<void> goToSurahJump({
 Future<void> goToJuzJump({
   required BuildContext sheetContext,
   required BuildContext parentContext,
-  required QuranRepository repo,
+  required QuranUseCases useCases,
   required Future<void> Function() onReload,
   required String input,
 }) async {
@@ -77,7 +77,7 @@ Future<void> goToJuzJump({
     return;
   }
 
-  final pages = await repo.pagesForJuz(juz);
+  final pages = await useCases.pagesForJuz(juz);
   if (!sheetContext.mounted || pages.isEmpty) return;
 
   Navigator.of(sheetContext).pop();
@@ -87,7 +87,7 @@ Future<void> goToJuzJump({
     MaterialPageRoute(
       builder: (_) => QuranPageViewerScreen(
         initialPage: pages.first,
-        repo: repo,
+        useCases: useCases,
         pages: pages,
         showPageTitle: false,
       ),
@@ -101,7 +101,7 @@ Future<void> goToJuzJump({
 Future<void> goToPageJump({
   required BuildContext sheetContext,
   required BuildContext parentContext,
-  required QuranRepository repo,
+  required QuranUseCases useCases,
   required Future<void> Function() onReload,
   required String input,
 }) async {
@@ -118,7 +118,7 @@ Future<void> goToPageJump({
     MaterialPageRoute(
       builder: (_) => QuranPageViewerScreen(
         initialPage: page,
-        repo: repo,
+        useCases: useCases,
         showPageTitle: false,
       ),
     ),

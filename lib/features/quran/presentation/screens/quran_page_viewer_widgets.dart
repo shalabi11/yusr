@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 
 AppBar buildQuranPageAppBar({
@@ -60,6 +61,21 @@ Widget buildQuranPageImage(
   final hasLocal = localImagePath != null && localImagePath.isNotEmpty;
   final hasRemote = remoteImageUrl != null && remoteImageUrl.isNotEmpty;
 
+  Widget buildRemoteImage() {
+    if (!hasRemote) {
+      return buildMissingImageMessage();
+    }
+
+    return CachedNetworkImage(
+      imageUrl: remoteImageUrl,
+      fit: BoxFit.contain,
+      memCacheWidth: targetCacheWidth,
+      filterQuality: FilterQuality.medium,
+      placeholder: (_, __) => const CircularProgressIndicator(),
+      errorWidget: (_, __, ___) => buildMissingImageMessage(),
+    );
+  }
+
   return InteractiveViewer(
     minScale: 1,
     maxScale: 4,
@@ -70,34 +86,9 @@ Widget buildQuranPageImage(
               fit: BoxFit.contain,
               cacheWidth: targetCacheWidth,
               filterQuality: FilterQuality.medium,
-              errorBuilder: (_, __, ___) {
-                if (!hasRemote) return buildMissingImageMessage();
-                return Image.network(
-                  remoteImageUrl,
-                  fit: BoxFit.contain,
-                  cacheWidth: targetCacheWidth,
-                  filterQuality: FilterQuality.medium,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return const CircularProgressIndicator();
-                  },
-                  errorBuilder: (_, __, ___) => buildMissingImageMessage(),
-                );
-              },
+              errorBuilder: (_, __, ___) => buildRemoteImage(),
             )
-          : hasRemote
-          ? Image.network(
-              remoteImageUrl,
-              fit: BoxFit.contain,
-              cacheWidth: targetCacheWidth,
-              filterQuality: FilterQuality.medium,
-              loadingBuilder: (context, child, progress) {
-                if (progress == null) return child;
-                return const CircularProgressIndicator();
-              },
-              errorBuilder: (_, __, ___) => buildMissingImageMessage(),
-            )
-          : buildMissingImageMessage(),
+          : buildRemoteImage(),
     ),
   );
 }

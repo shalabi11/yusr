@@ -28,7 +28,7 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const IntroScreen());
       case '/home':
         return MaterialPageRoute(
-          builder: (_) => HomeScreen(dailyAyahRepository: sl()),
+          builder: (_) => HomeScreen(dailyAyahUseCases: sl()),
         );
       case '/onboarding-auth':
         return MaterialPageRoute(
@@ -37,7 +37,7 @@ class AppRouter {
       case '/reminders':
         return MaterialPageRoute(
           builder: (_) =>
-              RemindersScreen(repository: sl(), adhkarRepository: sl()),
+              RemindersScreen(remindersUseCases: sl(), adhkarUseCases: sl()),
         );
       case '/settings':
         return MaterialPageRoute(builder: (_) => const SettingsScreen());
@@ -53,7 +53,7 @@ class AppRouter {
             ),
           );
         }
-        return MaterialPageRoute(builder: (_) => QuranScreen(repo: sl()));
+        return MaterialPageRoute(builder: (_) => QuranScreen(useCases: sl()));
       case '/adhkar':
         if (!StorageService.adhkarContentDownloaded) {
           return MaterialPageRoute(
@@ -67,7 +67,8 @@ class AppRouter {
           );
         }
         return MaterialPageRoute(
-          builder: (_) => AdhkarScreen(repo: sl(), remindersRepo: sl()),
+          builder: (_) =>
+              AdhkarScreen(adhkarUseCases: sl(), remindersUseCases: sl()),
         );
       case '/prayer':
         return MaterialPageRoute(builder: (_) => const PrayerTimesScreen());

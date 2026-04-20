@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
-import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
+import 'package:yusr_app/features/quran/domain/usecases/quran_use_cases.dart';
 import 'package:yusr_app/features/quran/presentation/screens/quran_page_viewer_screen.dart';
 
 class QuranPagesTab extends StatelessWidget {
-  const QuranPagesTab({required this.repo, super.key});
+  const QuranPagesTab({required this.useCases, super.key});
 
-  final QuranRepository repo;
+  final QuranUseCases useCases;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class QuranPagesTab extends StatelessWidget {
               MaterialPageRoute(
                 builder: (_) => QuranPageViewerScreen(
                   initialPage: page,
-                  repo: repo,
+                  useCases: useCases,
                   showPageTitle: false,
                 ),
               ),

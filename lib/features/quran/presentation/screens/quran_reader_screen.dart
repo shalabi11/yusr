@@ -3,14 +3,18 @@ import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/widgets/app_radial_background.dart';
 import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
-import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
+import 'package:yusr_app/features/quran/domain/usecases/quran_use_cases.dart';
 import 'package:yusr_app/features/quran/presentation/widgets/quran_verse_card.dart';
 
 class QuranReaderScreen extends StatefulWidget {
   final QuranSurah surah;
-  final QuranRepository repo;
+  final QuranUseCases useCases;
 
-  const QuranReaderScreen({super.key, required this.surah, required this.repo});
+  const QuranReaderScreen({
+    super.key,
+    required this.surah,
+    required this.useCases,
+  });
 
   @override
   State<QuranReaderScreen> createState() => _QuranReaderScreenState();
@@ -63,7 +67,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       pageNumber: verse.page,
       juzNumber: verse.juz,
     );
-    await widget.repo.addBookmark(data);
+    await widget.useCases.addBookmark(data);
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
@@ -80,18 +84,35 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
         actionsIconTheme: const IconThemeData(color: AppColors.accent),
       ),
       body: AppRadialBackground(
-        child: ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-          itemCount: widget.surah.verses.length + 1,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
-          itemBuilder: (context, index) {
-            if (index == 0) return _buildSurahMetaHeader();
-            final verse = widget.surah.verses[index - 1];
-            return QuranVerseCard(
-              verse: verse,
-              onSaveBookmark: () => _saveBookmark(verse),
-            );
-          },
+        child: CustomScrollView(
+          cacheExtent: 1400,
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    if (index == 0) {
+                      return _buildSurahMetaHeader();
+                    }
+
+                    final verse = widget.surah.verses[index - 1];
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: QuranVerseCard(
+                        verse: verse,
+                        onSaveBookmark: () => _saveBookmark(verse),
+                      ),
+                    );
+                  },
+                  childCount: widget.surah.verses.length + 1,
+                  addAutomaticKeepAlives: false,
+                  addRepaintBoundaries: true,
+                  addSemanticIndexes: true,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

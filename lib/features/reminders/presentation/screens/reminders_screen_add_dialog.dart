@@ -2,7 +2,7 @@ part of 'reminders_screen.dart';
 
 extension _RemindersAddDialog on _RemindersScreenState {
   Future<void> showAddReminderDialog() async {
-    final categories = await _adhkarRepository.loadCategories();
+    final categories = await _adhkarUseCases.loadCategories();
     if (!mounted) return;
     if (categories.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -48,7 +48,9 @@ extension _RemindersAddDialog on _RemindersScreenState {
                   iconCodeInfo: Icons.auto_awesome.codePoint,
                 );
 
-                final updated = await _repository.addOrUpdateByTitle(reminder);
+                final updated = await _remindersUseCases.addOrUpdateByTitle(
+                  reminder,
+                );
                 if (!mounted) return;
                 _replaceReminders(updated);
                 await NotificationService.syncReminders(reminders);

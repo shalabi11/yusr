@@ -3,41 +3,41 @@ import 'package:yusr_app/core/widgets/app_radial_background.dart';
 import 'package:yusr_app/core/services/notification_service.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/features/adhkar/data/models/adhkar_models.dart';
-import 'package:yusr_app/features/adhkar/data/repositories/adhkar_repository.dart';
+import 'package:yusr_app/features/adhkar/domain/usecases/adhkar_use_cases.dart';
 import 'package:yusr_app/features/adhkar/presentation/widgets/adhkar_category_card.dart';
 import 'package:yusr_app/features/reminders/data/models/reminder_model.dart';
-import 'package:yusr_app/features/reminders/data/repositories/reminders_repository.dart';
+import 'package:yusr_app/features/reminders/domain/usecases/reminders_use_cases.dart';
 
 class AdhkarScreen extends StatefulWidget {
   const AdhkarScreen({
-    required this.repo,
-    required this.remindersRepo,
+    required this.adhkarUseCases,
+    required this.remindersUseCases,
     super.key,
   });
 
-  final AdhkarRepository repo;
-  final RemindersRepository remindersRepo;
+  final AdhkarUseCases adhkarUseCases;
+  final RemindersUseCases remindersUseCases;
 
   @override
   State<AdhkarScreen> createState() => _AdhkarScreenState();
 }
 
 class _AdhkarScreenState extends State<AdhkarScreen> {
-  late final AdhkarRepository _repo;
-  late final RemindersRepository _remindersRepo;
+  late final AdhkarUseCases _adhkarUseCases;
+  late final RemindersUseCases _remindersUseCases;
   bool _loading = true;
   List<AdhkarCategory> _categories = const [];
 
   @override
   void initState() {
     super.initState();
-    _repo = widget.repo;
-    _remindersRepo = widget.remindersRepo;
+    _adhkarUseCases = widget.adhkarUseCases;
+    _remindersUseCases = widget.remindersUseCases;
     _load();
   }
 
   Future<void> _load() async {
-    final data = await _repo.loadCategories();
+    final data = await _adhkarUseCases.loadCategories();
     if (!mounted) return;
     setState(() {
       _categories = data;
@@ -63,7 +63,7 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
       iconCodeInfo: Icons.auto_awesome.codePoint,
     );
 
-    final reminders = await _remindersRepo.addOrUpdateByTitle(reminder);
+    final reminders = await _remindersUseCases.addOrUpdateByTitle(reminder);
     await NotificationService.syncReminders(reminders);
 
     if (!mounted) return;
