@@ -17,6 +17,12 @@ abstract class IStorageService {
   String get adhanSound;
   Future<void> setAdhanSound(String soundKey);
 
+  bool get lastThirdNightReminderEnabled;
+  Future<void> setLastThirdNightReminderEnabled(bool enabled);
+
+  bool get sunnahPrayerRemindersEnabled;
+  Future<void> setSunnahPrayerRemindersEnabled(bool enabled);
+
   double? get manualLat;
   double? get manualLng;
   String? get manualCity;

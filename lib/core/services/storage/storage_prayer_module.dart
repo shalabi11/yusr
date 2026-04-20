@@ -28,4 +28,18 @@ class StoragePrayerModule {
   Future<void> setAdhanSound(String soundKey) async {
     await _prefs.setString('adhan_sound', soundKey);
   }
+
+  bool get lastThirdNightReminderEnabled =>
+      _prefs.getBool('last_third_night_reminder_enabled') ?? false;
+
+  Future<void> setLastThirdNightReminderEnabled(bool enabled) async {
+    await _prefs.setBool('last_third_night_reminder_enabled', enabled);
+  }
+
+  bool get sunnahPrayerRemindersEnabled =>
+      _prefs.getBool('sunnah_prayer_reminders_enabled') ?? false;
+
+  Future<void> setSunnahPrayerRemindersEnabled(bool enabled) async {
+    await _prefs.setBool('sunnah_prayer_reminders_enabled', enabled);
+  }
 }

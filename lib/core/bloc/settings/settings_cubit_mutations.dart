@@ -49,6 +49,22 @@ mixin SettingsCubitMutations on Cubit<SettingsState> {
     syncStateToRemoteInternal(nextState);
   }
 
+  void setLastThirdNightReminderEnabled(bool enabled) {
+    if (enabled == state.lastThirdNightReminderEnabled) return;
+    _storageService.setLastThirdNightReminderEnabled(enabled);
+    final nextState = state.copyWith(lastThirdNightReminderEnabled: enabled);
+    emit(nextState);
+    syncStateToRemoteInternal(nextState);
+  }
+
+  void setSunnahPrayerRemindersEnabled(bool enabled) {
+    if (enabled == state.sunnahPrayerRemindersEnabled) return;
+    _storageService.setSunnahPrayerRemindersEnabled(enabled);
+    final nextState = state.copyWith(sunnahPrayerRemindersEnabled: enabled);
+    emit(nextState);
+    syncStateToRemoteInternal(nextState);
+  }
+
   void setQuranReadAsText(bool readAsText) {
     if (readAsText == state.quranReadAsText) return;
     _storageService.setQuranReadAsText(readAsText);

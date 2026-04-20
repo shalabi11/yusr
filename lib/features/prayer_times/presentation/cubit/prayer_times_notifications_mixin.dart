@@ -1,6 +1,10 @@
 part of 'prayer_times_cubit.dart';
 
 mixin PrayerTimesNotificationsMixin on Cubit<PrayerTimesState> {
+  static const int _lastThirdNightAlertId = 1601;
+  static const int _duhaAlertId = 1602;
+  static const int _witrAlertId = 1603;
+
   IStorageService get _storageService;
   INotificationService get _notificationService;
 
@@ -37,9 +41,82 @@ mixin PrayerTimesNotificationsMixin on Cubit<PrayerTimesState> {
       );
     }
 
+    await _syncAdvancedPrayerAlerts(
+      times: times,
+      now: now,
+      adhanSound: adhanSound,
+    );
+
     _updateStickyNotification(times, locationName);
     await _notificationService.syncFastingReminders(prayerTimes: times);
     await _rescheduleStickyRefreshNotifications(times, locationName, now);
+  }
+
+  Future<void> _syncAdvancedPrayerAlerts({
+    required PrayerTimeModel times,
+    required DateTime now,
+    required String adhanSound,
+  }) async {
+    await _notificationService.cancelNotification(_lastThirdNightAlertId);
+    await _notificationService.cancelNotification(_duhaAlertId);
+    await _notificationService.cancelNotification(_witrAlertId);
+
+    if (_storageService.lastThirdNightReminderEnabled) {
+      final isha = PrayerScheduleHelper.parseApiTime(times.isha, now);
+      var nextFajr = PrayerScheduleHelper.parseApiTime(times.fajr, now);
+      if (!nextFajr.isAfter(isha)) {
+        nextFajr = nextFajr.add(const Duration(days: 1));
+      }
+
+      final nightDuration = nextFajr.difference(isha);
+      final lastThirdStart = isha.add(
+        Duration(seconds: ((nightDuration.inSeconds * 2) / 3).round()),
+      );
+      final trigger = lastThirdStart.isAfter(now)
+          ? lastThirdStart
+          : lastThirdStart.add(const Duration(days: 1));
+
+      await _notificationService.schedulePrayerNotification(
+        id: _lastThirdNightAlertId,
+        title: 'تنبيه قيام الليل',
+        body: 'بدأ الثلث الأخير من الليل. هذا وقت مبارك للقيام والدعاء.',
+        time: trigger,
+        playAdhan: false,
+        adhanSound: adhanSound,
+      );
+    }
+
+    if (_storageService.sunnahPrayerRemindersEnabled) {
+      final sunrise = PrayerScheduleHelper.parseApiTime(times.sunrise, now);
+      final duhaBase = sunrise.add(const Duration(minutes: 30));
+      final duhaTrigger = duhaBase.isAfter(now)
+          ? duhaBase
+          : duhaBase.add(const Duration(days: 1));
+
+      final isha = PrayerScheduleHelper.parseApiTime(times.isha, now);
+      final witrBase = isha.add(const Duration(minutes: 90));
+      final witrTrigger = witrBase.isAfter(now)
+          ? witrBase
+          : witrBase.add(const Duration(days: 1));
+
+      await _notificationService.schedulePrayerNotification(
+        id: _duhaAlertId,
+        title: 'تنبيه صلاة الضحى',
+        body: 'تذكير بصلاة الضحى لمن أراد الزيادة من النوافل.',
+        time: duhaTrigger,
+        playAdhan: false,
+        adhanSound: adhanSound,
+      );
+
+      await _notificationService.schedulePrayerNotification(
+        id: _witrAlertId,
+        title: 'تنبيه صلاة الوتر',
+        body: 'لا تنسَ الوتر قبل النوم.',
+        time: witrTrigger,
+        playAdhan: false,
+        adhanSound: adhanSound,
+      );
+    }
   }
 
   Future<void> _rescheduleStickyRefreshNotifications(

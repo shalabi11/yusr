@@ -22,6 +22,17 @@ mixin StoragePrayerDelegates {
   Future<void> setAdhanSound(String soundKey) =>
       _prayer.setAdhanSound(soundKey);
 
+  bool get lastThirdNightReminderEnabled =>
+      _prayer.lastThirdNightReminderEnabled;
+
+  Future<void> setLastThirdNightReminderEnabled(bool enabled) =>
+      _prayer.setLastThirdNightReminderEnabled(enabled);
+
+  bool get sunnahPrayerRemindersEnabled => _prayer.sunnahPrayerRemindersEnabled;
+
+  Future<void> setSunnahPrayerRemindersEnabled(bool enabled) =>
+      _prayer.setSunnahPrayerRemindersEnabled(enabled);
+
   bool get quranReadAsText => _quran.quranReadAsText;
 
   Future<void> setQuranReadAsText(bool readAsText) =>

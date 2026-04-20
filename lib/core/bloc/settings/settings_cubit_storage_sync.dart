@@ -11,6 +11,12 @@ mixin SettingsCubitStorageSync on Cubit<SettingsState> {
     await _storageService.setPlayAdhan(settings.playAdhan);
     await _storageService.setStickyNotification(settings.stickyNotification);
     await _storageService.setAdhanSound(settings.adhanSound);
+    await _storageService.setLastThirdNightReminderEnabled(
+      settings.lastThirdNightReminderEnabled,
+    );
+    await _storageService.setSunnahPrayerRemindersEnabled(
+      settings.sunnahPrayerRemindersEnabled,
+    );
     await _storageService.setQuranReadAsText(settings.quranReadAsText);
     await _storageService.setFastingRemindersEnabled(
       settings.fastingRemindersEnabled,

@@ -50,6 +50,36 @@ class PrayerSettingsCard extends StatelessWidget {
           ),
           const SizedBox(height: 15),
           SettingsSwitchRow(
+            label: isArabic
+                ? 'تنبيه الثلث الأخير من الليل'
+                : 'Last Third of Night Alert',
+            value: state.lastThirdNightReminderEnabled,
+            onChanged: (val) {
+              settings.setLastThirdNightReminderEnabled(val);
+              prayerCubit.fetchPrayerTimes(force: true);
+            },
+          ),
+          const SizedBox(height: 12),
+          SettingsSwitchRow(
+            label: isArabic ? 'تنبيهات صلوات السنة' : 'Sunnah Prayer Alerts',
+            value: state.sunnahPrayerRemindersEnabled,
+            onChanged: (val) {
+              settings.setSunnahPrayerRemindersEnabled(val);
+              prayerCubit.fetchPrayerTimes(force: true);
+            },
+          ),
+          const SizedBox(height: 6),
+          Text(
+            isArabic
+                ? 'تشمل تنبيه قيام الليل في بداية الثلث الأخير، وتنبيه الضحى والوتر.'
+                : 'Includes a Qiyam reminder at the start of the last third, plus Duha and Witr reminders.',
+            style: TextStyle(
+              color: AppColors.textWhite.withValues(alpha: 0.7),
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 15),
+          SettingsSwitchRow(
             label: AppStrings.quranReadAsText.tr,
             value: state.quranReadAsText,
             onChanged: settings.setQuranReadAsText,

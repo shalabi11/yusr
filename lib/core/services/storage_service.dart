@@ -33,6 +33,14 @@ class StorageService {
   static String get adhanSound => _instance.adhanSound;
   static Future<void> setAdhanSound(String soundKey) =>
       _instance.setAdhanSound(soundKey);
+  static bool get lastThirdNightReminderEnabled =>
+      _instance.lastThirdNightReminderEnabled;
+  static Future<void> setLastThirdNightReminderEnabled(bool enabled) =>
+      _instance.setLastThirdNightReminderEnabled(enabled);
+  static bool get sunnahPrayerRemindersEnabled =>
+      _instance.sunnahPrayerRemindersEnabled;
+  static Future<void> setSunnahPrayerRemindersEnabled(bool enabled) =>
+      _instance.setSunnahPrayerRemindersEnabled(enabled);
   static double? get manualLat => _instance.manualLat;
   static double? get manualLng => _instance.manualLng;
   static String? get manualCity => _instance.manualCity;
@@ -63,8 +71,7 @@ class StorageService {
   static bool get adhkarContentDownloaded => _instance.adhkarContentDownloaded;
   static Future<void> setAdhkarContentDownloaded(bool downloaded) =>
       _instance.setAdhkarContentDownloaded(downloaded);
-  static int get downloadedContentVersion =>
-      _instance.downloadedContentVersion;
+  static int get downloadedContentVersion => _instance.downloadedContentVersion;
   static Future<void> setDownloadedContentVersion(int version) =>
       _instance.setDownloadedContentVersion(version);
   static String? get downloadedContentBasePath =>

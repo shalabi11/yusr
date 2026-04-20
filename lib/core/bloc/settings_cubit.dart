@@ -27,6 +27,10 @@ class SettingsCubit extends Cubit<SettingsState>
            playAdhan: _storageService.playAdhan,
            stickyNotification: _storageService.stickyNotification,
            adhanSound: _storageService.adhanSound,
+           lastThirdNightReminderEnabled:
+               _storageService.lastThirdNightReminderEnabled,
+           sunnahPrayerRemindersEnabled:
+               _storageService.sunnahPrayerRemindersEnabled,
            quranReadAsText: _storageService.quranReadAsText,
            fastingRemindersEnabled: _storageService.fastingRemindersEnabled,
            whiteDaysReminderEnabled: _storageService.whiteDaysReminderEnabled,

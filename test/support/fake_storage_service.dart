@@ -19,6 +19,12 @@ class FakeStorageService implements IStorageService {
   String adhanSound = 'adhan1';
 
   @override
+  bool lastThirdNightReminderEnabled = false;
+
+  @override
+  bool sunnahPrayerRemindersEnabled = false;
+
+  @override
   double? manualLat;
 
   @override
@@ -98,6 +104,11 @@ class FakeStorageService implements IStorageService {
   }
 
   @override
+  Future<void> setLastThirdNightReminderEnabled(bool enabled) async {
+    lastThirdNightReminderEnabled = enabled;
+  }
+
+  @override
   Future<void> setAdhkarContentDownloaded(bool downloaded) async {
     adhkarContentDownloaded = downloaded;
   }
@@ -171,6 +182,11 @@ class FakeStorageService implements IStorageService {
   @override
   Future<void> setQuranReadAsText(bool readAsText) async {
     quranReadAsText = readAsText;
+  }
+
+  @override
+  Future<void> setSunnahPrayerRemindersEnabled(bool enabled) async {
+    sunnahPrayerRemindersEnabled = enabled;
   }
 
   @override

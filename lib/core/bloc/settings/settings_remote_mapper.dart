@@ -28,6 +28,14 @@ class SettingsRemoteMapper {
       adhanSound: allowedSounds.contains(adhanSound)
           ? adhanSound
           : fallback.adhanSound,
+      lastThirdNightReminderEnabled: _asBool(
+        data['last_third_night_reminder_enabled'],
+        fallback.lastThirdNightReminderEnabled,
+      ),
+      sunnahPrayerRemindersEnabled: _asBool(
+        data['sunnah_prayer_reminders_enabled'],
+        fallback.sunnahPrayerRemindersEnabled,
+      ),
       quranReadAsText: _asBool(
         data['quran_read_as_text'],
         fallback.quranReadAsText,
