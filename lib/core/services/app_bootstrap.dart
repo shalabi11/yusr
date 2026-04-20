@@ -2,8 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/painting.dart';
+import 'package:flutter/widgets.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yusr_app/core/utils/app_logger.dart';
 import 'package:yusr_app/core/services/notification_service.dart';
 import 'package:yusr_app/core/services/supabase/supabase_bootstrap.dart';
@@ -20,6 +21,7 @@ class AppBootstrap {
   final ValueNotifier<AppBootstrapStatus> status =
       ValueNotifier<AppBootstrapStatus>(AppBootstrapStatus.idle);
   final Completer<void> _readyCompleter = Completer<void>();
+  Future<void>? _deferredInitFuture;
 
   Object? _error;
 
@@ -36,15 +38,50 @@ class AppBootstrap {
     status.value = AppBootstrapStatus.running;
 
     try {
-      await Hive.initFlutter();
-      await SupabaseBootstrap.init();
-      await initDependencies();
-      await FlutterDownloader.initialize(debug: kDebugMode, ignoreSsl: false);
+      final sharedPrefsFuture = SharedPreferences.getInstance();
+      await Future.wait<void>(<Future<void>>[
+        Hive.initFlutter(),
+        SupabaseBootstrap.init(),
+        sharedPrefsFuture.then<void>((_) {}),
+      ]);
+
+      await initDependencies(sharedPreferences: await sharedPrefsFuture);
 
       // Tune cache defaults for image-heavy screens like Quran page viewer.
       final imageCache = PaintingBinding.instance.imageCache;
       imageCache.maximumSize = 180;
       imageCache.maximumSizeBytes = 96 << 20;
+
+      status.value = AppBootstrapStatus.ready;
+      if (!_readyCompleter.isCompleted) {
+        _readyCompleter.complete();
+      }
+      _scheduleDeferredInitAfterFirstFrame();
+    } catch (error, stackTrace) {
+      _error = error;
+      AppLogger.error(
+        'bootstrap',
+        'start',
+        'App bootstrap failed.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      status.value = AppBootstrapStatus.failed;
+      if (!_readyCompleter.isCompleted) {
+        _readyCompleter.complete();
+      }
+    }
+  }
+
+  void _scheduleDeferredInitAfterFirstFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _deferredInitFuture ??= _runDeferredInitialization();
+    });
+  }
+
+  Future<void> _runDeferredInitialization() async {
+    try {
+      await FlutterDownloader.initialize(debug: kDebugMode, ignoreSsl: false);
 
       try {
         await NotificationService.init();
@@ -86,22 +123,20 @@ class AppBootstrap {
         );
         // Reminder sync should not block app usability.
       }
-
-      status.value = AppBootstrapStatus.ready;
     } catch (error, stackTrace) {
-      _error = error;
+      AppLogger.warning(
+        'bootstrap',
+        'deferredInitialization',
+        'Deferred bootstrap services failed. App remains usable.',
+        error: error,
+      );
       AppLogger.error(
         'bootstrap',
-        'start',
-        'App bootstrap failed.',
+        'deferredInitialization',
+        'Stack trace for deferred bootstrap failure.',
         error: error,
         stackTrace: stackTrace,
       );
-      status.value = AppBootstrapStatus.failed;
-    } finally {
-      if (!_readyCompleter.isCompleted) {
-        _readyCompleter.complete();
-      }
     }
   }
 }

@@ -13,13 +13,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 final sl = GetIt.instance;
 
-Future<void> initDependencies() async {
+Future<void> initDependencies({SharedPreferences? sharedPreferences}) async {
   const assistantWebhookUrl = String.fromEnvironment(
     'N8N_ASSISTANT_WEBHOOK_URL',
     defaultValue:
         'https://nonfenestrated-unreplevined-obdulia.ngrok-free.dev/webhook-test/yusr-assistant-split',
   );
-  final prefs = await SharedPreferences.getInstance();
+  final prefs = sharedPreferences ?? await SharedPreferences.getInstance();
 
   registerCoreServices(sl, prefs);
   registerContentDownloadDependencies(sl);
