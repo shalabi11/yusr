@@ -23,6 +23,7 @@ Future<void> openSurah(
   required bool readAsText,
   required QuranUseCases useCases,
   required Future<void> Function() onReload,
+  String? heroTag,
 }) async {
   if (readAsText) {
     await Navigator.push(
@@ -48,6 +49,9 @@ Future<void> openSurah(
           initialPage: targetPage,
           useCases: useCases,
           showPageTitle: false,
+          entryHeroTag: heroTag,
+          entrySurahNumber: surah.number,
+          entrySurahName: surah.nameAr,
         ),
       ),
     );

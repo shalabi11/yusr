@@ -18,6 +18,9 @@ class QuranPageViewerScreen extends StatefulWidget {
   final List<int>? pages;
   final bool showPageTitle;
   final QuranUseCases useCases;
+  final String? entryHeroTag;
+  final int? entrySurahNumber;
+  final String? entrySurahName;
 
   const QuranPageViewerScreen({
     super.key,
@@ -25,6 +28,9 @@ class QuranPageViewerScreen extends StatefulWidget {
     required this.useCases,
     this.pages,
     this.showPageTitle = false,
+    this.entryHeroTag,
+    this.entrySurahNumber,
+    this.entrySurahName,
   });
 
   @override
@@ -208,6 +214,9 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
         context: context,
         currentPage: _currentPage,
         showPageTitle: widget.showPageTitle,
+        entryHeroTag: widget.entryHeroTag,
+        entrySurahNumber: widget.entrySurahNumber,
+        entrySurahName: widget.entrySurahName,
         savedPages: _savedPages,
         onBookmark: _bookmarkCurrentPage,
         onToggleReverse: () => setState(() => _reverse = !_reverse),

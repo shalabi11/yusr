@@ -58,6 +58,7 @@ class QuranSurahTab extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       itemBuilder: (_, index) {
         final surah = surahs[index];
+        final heroTag = 'quran-surah-${surah.number}';
         final availability =
             offlineAvailabilityBySurah[surah.number] ??
             QuranOfflineAvailability.none;
@@ -69,6 +70,7 @@ class QuranSurahTab extends StatelessWidget {
             readAsText: readAsText,
             useCases: useCases,
             onReload: onReload,
+            heroTag: heroTag,
           ),
           borderRadius: BorderRadius.circular(16),
           child: GlassContainer(
@@ -76,13 +78,19 @@ class QuranSurahTab extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: AppColors.accent,
-                  child: Text(
-                    '${surah.number}',
-                    style: const TextStyle(
-                      color: AppColors.primaryDark,
-                      fontWeight: FontWeight.bold,
+                Hero(
+                  tag: heroTag,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: CircleAvatar(
+                      backgroundColor: AppColors.accent,
+                      child: Text(
+                        '${surah.number}',
+                        style: const TextStyle(
+                          color: AppColors.primaryDark,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ),
