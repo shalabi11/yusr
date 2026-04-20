@@ -33,18 +33,18 @@ mixin PrayerTimesFetchMixin on Cubit<PrayerTimesState> {
       return Future.value();
     }
 
-    final future = _performFetch();
+    final future = _performFetch(force: force);
     _activeFetch = future;
     future.whenComplete(() => _activeFetch = null);
     return future;
   }
 
-  Future<void> _performFetch() async {
+  Future<void> _performFetch({required bool force}) async {
     if (state is! PrayerTimesLoaded) {
       emit(PrayerTimesLoading());
     }
     try {
-      final result = await repository.getPrayerTimes();
+      final result = await repository.getPrayerTimes(forceRefresh: force);
       await result.fold(
         (failure) async {
           _countdownService.clear();

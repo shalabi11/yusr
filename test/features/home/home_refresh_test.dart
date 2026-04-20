@@ -33,7 +33,9 @@ class FakePrayerTimesRepositoryForHome extends PrayerTimesRepository {
   int fetchCount = 0;
 
   @override
-  Future<Either<Failure, PrayerTimesFetchResult>> getPrayerTimes() async {
+  Future<Either<Failure, PrayerTimesFetchResult>> getPrayerTimes({
+    bool forceRefresh = false,
+  }) async {
     fetchCount += 1;
     return Right(
       PrayerTimesFetchResult(

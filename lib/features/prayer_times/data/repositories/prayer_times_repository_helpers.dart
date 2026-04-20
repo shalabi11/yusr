@@ -51,6 +51,10 @@ extension PrayerTimesRepositoryHelpers on PrayerTimesRepository {
       PrayerTimesRepository._locationNameKey,
       locationName,
     );
+    await _storageService.saveData(
+      PrayerTimesRepository._lastRemoteFetchAtKey,
+      DateTime.now().millisecondsSinceEpoch,
+    );
 
     return Right(
       PrayerTimesFetchResult(

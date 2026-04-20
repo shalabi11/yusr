@@ -25,6 +25,9 @@ class PrayerTimesRepository {
   static const String _prayerTimesKey = 'cached_prayer_times';
   static const String _locationNameKey = 'cached_location_name';
   static const String _manualLocationEnabledKey = 'manual_location_enabled';
+  static const String _lastRemoteFetchAtKey =
+      'prayer_times_last_remote_fetch_at';
+  static const Duration _cacheFreshWindow = Duration(minutes: 30);
 
   PrayerTimesRepository({
     PrayerTimesRemoteDataSource? remoteDataSource,
@@ -65,8 +68,21 @@ class PrayerTimesRepository {
     return enabled == true;
   }
 
-  Future<Either<Failure, PrayerTimesFetchResult>> getPrayerTimes() async {
+  Future<Either<Failure, PrayerTimesFetchResult>> getPrayerTimes({
+    bool forceRefresh = false,
+  }) async {
     try {
+      if (!forceRefresh) {
+        final cachedLocationName = getCachedLocationName();
+        final shouldUseCache = _hasFreshRemoteFetch();
+        if (shouldUseCache) {
+          final cached = buildCachedResult(cachedLocationName);
+          if (cached != null) {
+            return cached;
+          }
+        }
+      }
+
       final resolved = await resolveLocationCoordinates();
       final remote = await tryFetchRemote(
         lat: resolved.$1,
@@ -91,5 +107,39 @@ class PrayerTimesRepository {
   String getCachedLocationName() {
     final name = _storageService.getData(_locationNameKey);
     return name?.toString() ?? 'موقع غير معروف';
+  }
+
+  bool _hasFreshRemoteFetch() {
+    final rawLastFetchAt = _storageService.getData(_lastRemoteFetchAtKey);
+    final lastFetchAt = _parseLastFetchAt(rawLastFetchAt);
+    if (lastFetchAt == null) {
+      return false;
+    }
+
+    final hasCachedPrayerTimes = _storageService.getData(_prayerTimesKey);
+    if (hasCachedPrayerTimes == null) {
+      return false;
+    }
+
+    return DateTime.now().difference(lastFetchAt) < _cacheFreshWindow;
+  }
+
+  DateTime? _parseLastFetchAt(dynamic value) {
+    if (value is int) {
+      return DateTime.fromMillisecondsSinceEpoch(value);
+    }
+
+    if (value is double) {
+      return DateTime.fromMillisecondsSinceEpoch(value.toInt());
+    }
+
+    if (value is String) {
+      final millis = int.tryParse(value);
+      if (millis != null) {
+        return DateTime.fromMillisecondsSinceEpoch(millis);
+      }
+    }
+
+    return null;
   }
 }
