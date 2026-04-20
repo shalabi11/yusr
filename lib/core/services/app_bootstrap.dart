@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yusr_app/core/utils/app_logger.dart';
 import 'package:yusr_app/core/services/notification_service.dart';
+import 'package:yusr_app/core/services/storage/storage_hive_bootstrap.dart';
 import 'package:yusr_app/core/services/supabase/supabase_bootstrap.dart';
 import 'package:yusr_app/features/reminders/data/repositories/reminders_repository.dart';
 import 'package:yusr_app/injection_container.dart';
@@ -39,13 +39,14 @@ class AppBootstrap {
 
     try {
       final sharedPrefsFuture = SharedPreferences.getInstance();
+
       await Future.wait<void>(<Future<void>>[
-        Hive.initFlutter(),
+        sharedPrefsFuture.then<void>(initializeStorageHive),
         SupabaseBootstrap.init(),
-        sharedPrefsFuture.then<void>((_) {}),
       ]);
 
-      await initDependencies(sharedPreferences: await sharedPrefsFuture);
+      final sharedPreferences = await sharedPrefsFuture;
+      await initDependencies(sharedPreferences: sharedPreferences);
 
       // Tune cache defaults for image-heavy screens like Quran page viewer.
       final imageCache = PaintingBinding.instance.imageCache;
