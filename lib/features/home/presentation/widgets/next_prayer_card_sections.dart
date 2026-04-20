@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/widgets/prayer_countdown_text.dart';
-import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
 
 class NextPrayerLeftSection extends StatelessWidget {
   const NextPrayerLeftSection({
@@ -46,19 +45,21 @@ class NextPrayerLeftSection extends StatelessWidget {
 }
 
 class NextPrayerRightSection extends StatelessWidget {
-  const NextPrayerRightSection({required this.state, super.key});
+  const NextPrayerRightSection({
+    required this.isLoading,
+    required this.locationName,
+    super.key,
+  });
 
-  final PrayerTimesState state;
+  final bool isLoading;
+  final String? locationName;
 
   @override
   Widget build(BuildContext context) {
-    final loaded = state is PrayerTimesLoaded
-        ? state as PrayerTimesLoaded
-        : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        if (state is PrayerTimesLoading)
+        if (isLoading)
           const SizedBox(
             width: 20,
             height: 20,
@@ -76,9 +77,9 @@ class NextPrayerRightSection extends StatelessWidget {
               fontFamily: 'monospace',
             ),
           ),
-          if (loaded != null)
+          if (locationName != null)
             Text(
-              loaded.locationName,
+              locationName!,
               style: TextStyle(
                 color: AppColors.textWhite.withValues(alpha: 0.5),
                 fontSize: 10,

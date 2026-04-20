@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:yusr_app/core/error/failures.dart';
 import 'package:yusr_app/features/prayer_times/data/models/prayer_time_model.dart';
 import 'package:yusr_app/features/prayer_times/data/repositories/prayer_times_repository.dart';
+import 'package:yusr_app/features/prayer_times/domain/prayer_countdown_service.dart';
 import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
 
 import '../../support/fake_notification_service.dart';
@@ -50,7 +51,12 @@ void main() {
           ),
         );
 
-        final cubit = PrayerTimesCubit(repository, storage, notifications);
+        final cubit = PrayerTimesCubit(
+          repository,
+          storage,
+          notifications,
+          PrayerCountdownService(),
+        );
         await cubit.fetchPrayerTimes(force: true);
 
         expect(cubit.state, isA<PrayerTimesLoaded>());
@@ -72,7 +78,12 @@ void main() {
         const Left(ServerFailure('fetch failed')),
       );
 
-      final cubit = PrayerTimesCubit(repository, storage, notifications);
+      final cubit = PrayerTimesCubit(
+        repository,
+        storage,
+        notifications,
+        PrayerCountdownService(),
+      );
       await cubit.fetchPrayerTimes(force: true);
 
       expect(cubit.state, isA<PrayerTimesError>());

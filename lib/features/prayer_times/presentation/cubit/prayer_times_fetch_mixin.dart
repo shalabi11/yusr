@@ -2,6 +2,7 @@ part of 'prayer_times_cubit.dart';
 
 mixin PrayerTimesFetchMixin on Cubit<PrayerTimesState> {
   PrayerTimesRepository get repository;
+  PrayerCountdownService get _countdownService;
   DateTime? get _lastFetchAt;
   set _lastFetchAt(DateTime? value);
   Future<void>? get _activeFetch;
@@ -46,6 +47,7 @@ mixin PrayerTimesFetchMixin on Cubit<PrayerTimesState> {
       final result = await repository.getPrayerTimes();
       await result.fold(
         (failure) async {
+          _countdownService.clear();
           emit(PrayerTimesError(failure.message));
         },
         (data) async {
@@ -64,10 +66,12 @@ mixin PrayerTimesFetchMixin on Cubit<PrayerTimesState> {
               PrayerScheduleHelper.formatCountdown(nextInfo.remaining),
             ),
           );
+          _countdownService.bindPrayerTimes(data.prayerTimes);
           await _syncPrayerNotifications(data.prayerTimes, data.locationName);
         },
       );
     } catch (e) {
+      _countdownService.clear();
       emit(PrayerTimesError('حدث خطأ غير متوقع: ${e.toString()}'));
     }
   }

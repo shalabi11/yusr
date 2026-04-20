@@ -6,6 +6,7 @@ import 'package:yusr_app/core/services/app_bootstrap.dart';
 import 'package:yusr_app/core/bloc/settings_cubit.dart';
 
 import 'package:yusr_app/features/content_download/presentation/cubit/content_download_cubit.dart';
+import 'package:yusr_app/features/prayer_times/domain/prayer_countdown_service.dart';
 import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
 import 'package:yusr_app/injection_container.dart';
 
@@ -35,39 +36,50 @@ class IslamicApp extends StatelessWidget {
           );
         }
 
-        return MultiBlocProvider(
+        return MultiRepositoryProvider(
           providers: [
-            BlocProvider(
-              create: (context) =>
-                  sl<SettingsCubit>()..loadFromRemoteOnStartup(),
-            ),
-            BlocProvider(
-              create: (context) =>
-                  sl<PrayerTimesCubit>()..fetchPrayerTimes(force: true),
-            ),
-            BlocProvider<ContentDownloadCubit>.value(
-              value: sl<ContentDownloadCubit>()..syncInitialState(),
+            RepositoryProvider<PrayerCountdownService>.value(
+              value: sl<PrayerCountdownService>(),
             ),
           ],
-          child: MaterialApp(
-            title: _appTitle,
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.darkTheme,
-            onGenerateRoute: AppRouter.onGenerateRoute,
-            initialRoute: '/',
-            builder: (context, child) {
-              return BlocSelector<SettingsCubit, SettingsState, TextDirection>(
-                selector: (state) => state.langCode == 'ar'
-                    ? TextDirection.rtl
-                    : TextDirection.ltr,
-                builder: (context, textDirection) {
-                  return Directionality(
-                    textDirection: textDirection,
-                    child: child ?? const SizedBox.shrink(),
-                  );
-                },
-              );
-            },
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (context) =>
+                    sl<SettingsCubit>()..loadFromRemoteOnStartup(),
+              ),
+              BlocProvider(
+                create: (context) =>
+                    sl<PrayerTimesCubit>()..fetchPrayerTimes(force: true),
+              ),
+              BlocProvider<ContentDownloadCubit>.value(
+                value: sl<ContentDownloadCubit>()..syncInitialState(),
+              ),
+            ],
+            child: MaterialApp(
+              title: _appTitle,
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.darkTheme,
+              onGenerateRoute: AppRouter.onGenerateRoute,
+              initialRoute: '/',
+              builder: (context, child) {
+                return BlocSelector<
+                  SettingsCubit,
+                  SettingsState,
+                  TextDirection
+                >(
+                  selector: (state) => state.langCode == 'ar'
+                      ? TextDirection.rtl
+                      : TextDirection.ltr,
+                  builder: (context, textDirection) {
+                    return Directionality(
+                      textDirection: textDirection,
+                      child: child ?? const SizedBox.shrink(),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         );
       },
