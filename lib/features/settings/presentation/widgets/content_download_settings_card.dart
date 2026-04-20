@@ -38,8 +38,8 @@ class _ContentDownloadSettingsCardState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: const [
+          const Row(
+            children: [
               Icon(Icons.download_rounded, color: AppColors.accent),
               SizedBox(width: 10),
               Text(

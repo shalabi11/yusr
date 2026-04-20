@@ -12,7 +12,7 @@ AuthController createAuthController() {
   const remoteDataSource = SupabaseAuthRemoteDataSource();
   const repository = AuthRepositoryImpl(remoteDataSource);
 
-  return AuthController(
+  return const AuthController(
     signInWithEmailUseCase: SignInWithEmailUseCase(repository),
     signUpWithEmailUseCase: SignUpWithEmailUseCase(repository),
     signOutUseCase: SignOutUseCase(repository),

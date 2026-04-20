@@ -165,10 +165,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        leading: BackButton(color: AppColors.textWhite),
-        title: Text(
+        leading: const BackButton(color: AppColors.textWhite),
+        title: const Text(
           'الملف الشخصي',
-          style: const TextStyle(color: AppColors.textWhite),
+          style: TextStyle(color: AppColors.textWhite),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,

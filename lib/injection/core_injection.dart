@@ -1,6 +1,13 @@
-part of 'injection_container.dart';
+import 'package:dio/dio.dart';
+import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:yusr_app/core/services/notification_service.dart';
+import 'package:yusr_app/core/services/storage/istorage_service.dart';
+import 'package:yusr_app/core/services/storage/storage_sevice_impl.dart';
+import 'package:yusr_app/core/services/supabase/supabase_bootstrap.dart';
 
-void _registerCoreServices(SharedPreferences prefs) {
+void registerCoreServices(GetIt sl, SharedPreferences prefs) {
   if (!sl.isRegistered<IStorageService>()) {
     sl.registerLazySingleton<IStorageService>(() => StorageServiceImpl(prefs));
   }

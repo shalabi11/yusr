@@ -74,7 +74,7 @@ class _AuthScreenState extends State<AuthScreen> {
           return Scaffold(
             extendBodyBehindAppBar: true,
             appBar: AppBar(
-              leading: BackButton(color: AppColors.textWhite),
+              leading: const BackButton(color: AppColors.textWhite),
               title: Text(
                 isSignIn ? 'تسجيل الدخول' : 'إنشاء حساب',
                 style: const TextStyle(color: AppColors.textWhite),

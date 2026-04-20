@@ -53,7 +53,7 @@ class SupabaseAuthRemoteDataSource implements AuthRemoteDataSource {
     final auth = Supabase.instance.client.auth;
     final userId = auth.currentUser?.id;
     if (userId == null) {
-      throw AuthException('المستخدم غير مسجل الدخول');
+      throw const AuthException('المستخدم غير مسجل الدخول');
     }
 
     await auth.updateUser(UserAttributes(data: {'username': username}));
@@ -74,7 +74,7 @@ class SupabaseAuthRemoteDataSource implements AuthRemoteDataSource {
     final auth = Supabase.instance.client.auth;
     final user = auth.currentUser;
     if (user == null) {
-      throw AuthException('المستخدم غير مسجل الدخول');
+      throw const AuthException('المستخدم غير مسجل الدخول');
     }
     final userId = user.id;
 
