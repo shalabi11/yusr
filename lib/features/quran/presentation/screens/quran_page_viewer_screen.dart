@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -42,8 +43,25 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
   final Set<int> _prefetchedPages = <int>{};
   final List<int> _prefetchQueue = <int>[];
 
-  static const int _maxPrefetchedPages = 8;
+  static const int _maxPrefetchedPages = 5;
   static const int _maxPrefetchDistance = 2;
+
+  void _evictPageImage(int page) {
+    final provider = _providerForPage(page);
+    if (provider == null) {
+      return;
+    }
+    unawaited(provider.evict());
+  }
+
+  void _evictTrackedPageImages() {
+    final pagesToEvict = <int>{..._prefetchedPages, _currentPage};
+    for (final page in pagesToEvict) {
+      _evictPageImage(page);
+    }
+    _prefetchedPages.clear();
+    _prefetchQueue.clear();
+  }
 
   void _replacePageMeta(Map<int, QuranPageMeta> map) {
     setState(() {
@@ -97,6 +115,7 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
     while (_prefetchQueue.length > _maxPrefetchedPages) {
       final oldest = _prefetchQueue.removeAt(0);
       _prefetchedPages.remove(oldest);
+      _evictPageImage(oldest);
     }
   }
 
@@ -176,6 +195,7 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
 
   @override
   void dispose() {
+    _evictTrackedPageImages();
     _controller.dispose();
     super.dispose();
   }
