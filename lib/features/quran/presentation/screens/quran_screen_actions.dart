@@ -4,10 +4,11 @@ extension QuranScreenActions on QuranScreenState {
   Future<void> loadData() async {
     try {
       final surahs = await widget.useCases.loadSurahs();
-      unawaited(widget.useCases.primeSmartSearchIndex(surahs));
-      final localPageImagePaths = await widget.useCases
+      unawaited(_primeSmartSearchIndexSafely(surahs));
+      final localPageImagePathsFuture = widget.useCases
           .loadLocalPageImagePaths();
       await widget.useCases.syncProgressOnStartup();
+      final localPageImagePaths = await localPageImagePathsFuture;
       final lastRead = widget.useCases.getLastRead();
       _applyLoadedData(
         surahs,
@@ -23,6 +24,26 @@ extension QuranScreenActions on QuranScreenState {
         stackTrace: stackTrace,
       );
       _applyLoadedData(const <QuranSurah>[], widget.useCases.getLastRead());
+    }
+  }
+
+  Future<void> _primeSmartSearchIndexSafely(List<QuranSurah> surahs) async {
+    try {
+      await widget.useCases.primeSmartSearchIndex(surahs);
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'quran',
+        'primeSmartSearchIndex',
+        'Skipping smart search indexing due to startup failure.',
+        error: error,
+      );
+      AppLogger.error(
+        'quran',
+        'primeSmartSearchIndex',
+        'Stack trace for smart search index startup failure.',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 

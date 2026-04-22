@@ -37,10 +37,8 @@ class QuranScreenState extends State<QuranScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   late final TextEditingController _daysController;
-  late final TextEditingController _searchController;
   List<QuranSurah> _surahs = const [];
   List<QuranSurah> _filteredSurahs = const [];
-  final Map<int, String> _searchableTextBySurah = <int, String>{};
   final Map<int, String> _matchedPreviewBySurah = <int, String>{};
   Map<int, QuranOfflineAvailability> _offlineAvailabilityBySurah =
       const <int, QuranOfflineAvailability>{};
@@ -48,17 +46,12 @@ class QuranScreenState extends State<QuranScreen>
   bool _loading = true;
   QuranLastRead? _lastRead;
   KhatmaPlan? _khatmaPlan;
-  Timer? _searchDebounce;
-  int _searchTicket = 0;
-
-  static const Duration _searchDebounceDuration = Duration(milliseconds: 220);
 
   void _applyLoadedData(
     List<QuranSurah> surahs,
     QuranLastRead? lastRead, {
     Map<int, String> localPageImagePaths = const <int, String>{},
   }) {
-    _rebuildSearchIndexes(surahs);
     final offlineAvailability = _buildOfflineAvailability(
       surahs,
       localPageImagePaths,
@@ -71,9 +64,9 @@ class QuranScreenState extends State<QuranScreen>
       _loading = false;
       _khatmaPlan = widget.useCases.calculateKhatmaPlan(30);
       _offlineAvailabilityBySurah = offlineAvailability;
+      _search = '';
+      _matchedPreviewBySurah.clear();
     });
-
-    unawaited(_applySearchFilter(_searchController.text));
   }
 
   void _applyKhatmaPlan(int days) {
@@ -81,21 +74,6 @@ class QuranScreenState extends State<QuranScreen>
     setState(() {
       _khatmaPlan = widget.useCases.calculateKhatmaPlan(days);
     });
-  }
-
-  void _updateSearch(String value) {
-    _searchDebounce?.cancel();
-    _searchDebounce = Timer(_searchDebounceDuration, () {
-      if (!mounted) return;
-      unawaited(_applySearchFilter(value));
-    });
-  }
-
-  void _clearSearch() {
-    _searchController.clear();
-    _searchDebounce?.cancel();
-    if (!mounted) return;
-    unawaited(_applySearchFilter(''));
   }
 
   Map<int, QuranOfflineAvailability> _buildOfflineAvailability(
@@ -132,120 +110,18 @@ class QuranScreenState extends State<QuranScreen>
     return availabilityBySurah;
   }
 
-  void _rebuildSearchIndexes(List<QuranSurah> surahs) {
-    _searchableTextBySurah
-      ..clear()
-      ..addEntries(
-        surahs.map(
-          (surah) => MapEntry(
-            surah.number,
-            [
-              surah.nameAr,
-              surah.nameEn.toLowerCase(),
-              surah.number.toString(),
-              ...surah.verses.map((verse) => verse.textAr),
-            ].join(' '),
-          ),
-        ),
-      );
-  }
-
-  Future<void> _applySearchFilter(String rawQuery) async {
-    final ticket = ++_searchTicket;
-    final query = rawQuery.trim();
-    if (query.isEmpty) {
-      if (!mounted || ticket != _searchTicket) return;
-      setState(() {
-        _search = '';
-        _matchedPreviewBySurah.clear();
-        _filteredSurahs = _surahs;
-      });
-      return;
-    }
-
-    final lower = query.toLowerCase();
-    final smartMatches = await widget.useCases.searchSurahs(query, limit: 80);
-    if (!mounted || ticket != _searchTicket) {
-      return;
-    }
-
-    if (smartMatches.isNotEmpty) {
-      final bySurah = <int, QuranSurah>{
-        for (final surah in _surahs) surah.number: surah,
-      };
-      final filtered = <QuranSurah>[];
-      final previews = <int, String>{};
-
-      for (final match in smartMatches) {
-        final surah = bySurah[match.surahNumber];
-        if (surah == null) {
-          continue;
-        }
-        filtered.add(surah);
-        if (match.preview.isNotEmpty) {
-          previews[surah.number] = match.preview;
-        }
-      }
-
-      setState(() {
-        _search = query;
-        _filteredSurahs = filtered;
-        _matchedPreviewBySurah
-          ..clear()
-          ..addAll(previews);
-      });
-      return;
-    }
-
-    final filtered = <QuranSurah>[];
-    final previews = <int, String>{};
-
-    for (final surah in _surahs) {
-      final searchableText = _searchableTextBySurah[surah.number] ?? '';
-      if (!searchableText.contains(query) && !searchableText.contains(lower)) {
-        continue;
-      }
-
-      final verseMatch = surah.verses.firstWhere(
-        (verse) =>
-            verse.textAr.contains(query) ||
-            verse.textAr.toLowerCase().contains(lower),
-        orElse: () => const QuranVerse(number: 0, textAr: '', juz: 0, page: 0),
-      );
-      if (verseMatch.number != 0 && verseMatch.textAr.isNotEmpty) {
-        final preview = verseMatch.textAr;
-        previews[surah.number] = preview.length > 45
-            ? '${preview.substring(0, 45)}...'
-            : preview;
-      }
-
-      filtered.add(surah);
-    }
-
-    setState(() {
-      _search = query;
-      _filteredSurahs = filtered;
-      _matchedPreviewBySurah
-        ..clear()
-        ..addAll(previews);
-    });
-  }
-
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _daysController = TextEditingController(text: '30');
-    _searchController = TextEditingController();
     loadData();
   }
 
   @override
   void dispose() {
-    _searchDebounce?.cancel();
     _tabController.dispose();
     _daysController.dispose();
-    _searchController.dispose();
     super.dispose();
   }
 

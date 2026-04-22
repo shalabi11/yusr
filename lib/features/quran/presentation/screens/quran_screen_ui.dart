@@ -56,6 +56,8 @@ extension QuranScreenUi on QuranScreenState {
 
     return Column(
       children: [
+        /*
+        // TODO: Re-enable search feature in the future once performance is improved.
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: TextField(
@@ -75,6 +77,7 @@ extension QuranScreenUi on QuranScreenState {
             ),
           ),
         ),
+        */
         Expanded(
           child: RefreshIndicator(
             onRefresh: loadData,

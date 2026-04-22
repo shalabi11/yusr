@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:yusr_app/core/utils/app_logger.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
 
 class QuranSmartSearchMatch {
@@ -22,42 +23,56 @@ class QuranSmartSearchService {
 
   Database? _db;
   String? _indexedSignature;
+  bool _isEnabled = true;
 
   Future<void> ensureIndex(List<QuranSurah> surahs) async {
-    if (surahs.isEmpty) {
+    if (!_isEnabled || surahs.isEmpty) {
       return;
     }
 
-    final indexPayload = await compute(_prepareIndexPayload, surahs);
-    final signature = indexPayload['signature'] as String? ?? '';
-    if (_indexedSignature == signature) {
-      return;
-    }
-
-    final rows = (indexPayload['rows'] as List<Object?>?) ?? const <Object?>[];
-
-    final db = await _openDb();
-    await db.transaction((txn) async {
-      await txn.delete(_ftsTable);
-      final batch = txn.batch();
-
-      for (final row in rows) {
-        batch.insert(
-          _ftsTable,
-          Map<String, Object?>.from(row as Map<Object?, Object?>),
-        );
+    try {
+      final indexPayload = await compute(_prepareIndexPayload, surahs);
+      final signature = indexPayload['signature'] as String? ?? '';
+      if (_indexedSignature == signature) {
+        return;
       }
 
-      await batch.commit(noResult: true);
-    });
+      final rows =
+          (indexPayload['rows'] as List<Object?>?) ?? const <Object?>[];
 
-    _indexedSignature = signature;
+      final db = await _openDb();
+      await db.transaction((txn) async {
+        await txn.delete(_ftsTable);
+        final batch = txn.batch();
+
+        for (final row in rows) {
+          batch.insert(
+            _ftsTable,
+            Map<String, Object?>.from(row as Map<Object?, Object?>),
+          );
+        }
+
+        await batch.commit(noResult: true);
+      });
+
+      _indexedSignature = signature;
+    } catch (error, stackTrace) {
+      _disableSearch(
+        reason: 'Failed to build Quran smart-search index; disabling search.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   Future<List<QuranSmartSearchMatch>> search(
     String query, {
     int limit = 60,
   }) async {
+    if (!_isEnabled) {
+      return const <QuranSmartSearchMatch>[];
+    }
+
     final normalized = query.trim();
     if (normalized.isEmpty) {
       return const <QuranSmartSearchMatch>[];
@@ -68,35 +83,42 @@ class QuranSmartSearchService {
       return const <QuranSmartSearchMatch>[];
     }
 
-    final db = await _openDb();
+    try {
+      final db = await _openDb();
 
-    final rows = await db.rawQuery(
-      '''
-      SELECT surah_number, verse_number,
-             snippet($_ftsTable, 4, '', '', '…', 14) AS preview,
-             bm25($_ftsTable) AS rank
-      FROM $_ftsTable
-      WHERE $_ftsTable MATCH ?
-      ORDER BY rank
-      LIMIT ?
-      ''',
-      <Object>[ftsQuery, limit * 4],
-    );
+      final rows = await db.rawQuery(
+        '''
+        SELECT surah_number, verse_number, text_ar AS preview
+        FROM $_ftsTable
+        WHERE $_ftsTable MATCH ?
+        ORDER BY rowid
+        LIMIT ?
+        ''',
+        <Object>[ftsQuery, limit * 4],
+      );
 
-    final reducedRows = await compute(_reduceSearchRows, <String, Object?>{
-      'rows': rows,
-      'limit': limit,
-    });
+      final reducedRows = await compute(_reduceSearchRows, <String, Object?>{
+        'rows': rows,
+        'limit': limit,
+      });
 
-    return reducedRows
-        .map(
-          (row) => QuranSmartSearchMatch(
-            surahNumber: (row['surah_number'] as int?) ?? 0,
-            preview: (row['preview'] as String? ?? '').trim(),
-          ),
-        )
-        .where((match) => match.surahNumber > 0)
-        .toList(growable: false);
+      return reducedRows
+          .map(
+            (row) => QuranSmartSearchMatch(
+              surahNumber: (row['surah_number'] as int?) ?? 0,
+              preview: (row['preview'] as String? ?? '').trim(),
+            ),
+          )
+          .where((match) => match.surahNumber > 0)
+          .toList(growable: false);
+    } catch (error, stackTrace) {
+      _disableSearch(
+        reason: 'Quran smart-search query failed; disabling search.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return const <QuranSmartSearchMatch>[];
+    }
   }
 
   Future<Database> _openDb() async {
@@ -113,16 +135,7 @@ class QuranSmartSearchService {
       onCreate: (database, _) async {
         await database.execute('PRAGMA page_size = 4096');
         await database.execute('PRAGMA auto_vacuum = INCREMENTAL');
-        await database.execute(
-          'CREATE VIRTUAL TABLE $_ftsTable USING fts5('
-          'surah_number UNINDEXED, '
-          'surah_name_ar, '
-          'surah_name_en, '
-          'verse_number UNINDEXED, '
-          'text_ar, '
-          'topic_terms'
-          ')',
-        );
+        await _createFtsTable(database);
       },
     );
     await db.execute('PRAGMA journal_mode = WAL');
@@ -132,6 +145,59 @@ class QuranSmartSearchService {
     await db.execute('PRAGMA optimize');
     _db = db;
     return db;
+  }
+
+  Future<void> _createFtsTable(Database database) async {
+    try {
+      await database.execute(
+        'CREATE VIRTUAL TABLE $_ftsTable USING fts5('
+        'surah_number UNINDEXED, '
+        'surah_name_ar, '
+        'surah_name_en, '
+        'verse_number UNINDEXED, '
+        'text_ar, '
+        'topic_terms'
+        ')',
+      );
+    } on DatabaseException catch (error) {
+      if (!_isFts5Unsupported(error)) {
+        rethrow;
+      }
+      await database.execute(
+        'CREATE VIRTUAL TABLE $_ftsTable USING fts4('
+        'surah_number, '
+        'surah_name_ar, '
+        'surah_name_en, '
+        'verse_number, '
+        'text_ar, '
+        'topic_terms'
+        ')',
+      );
+    }
+  }
+
+  bool _isFts5Unsupported(DatabaseException error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('no such module: fts5');
+  }
+
+  void _disableSearch({
+    required String reason,
+    required Object error,
+    required StackTrace stackTrace,
+  }) {
+    if (!_isEnabled) {
+      return;
+    }
+    _isEnabled = false;
+    AppLogger.warning('quran', 'smartSearch', reason, error: error);
+    AppLogger.error(
+      'quran',
+      'smartSearch',
+      'Smart search disabled due to runtime failure.',
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   static String _buildFtsQuery(String query) {
@@ -245,7 +311,7 @@ List<Map<String, Object?>> _reduceSearchRows(Map<String, Object?> payload) {
     }
     bySurah[surahNumber] = <String, Object?>{
       'surah_number': surahNumber,
-      'preview': (row['preview'] as String? ?? '').trim(),
+      'preview': _trimPreview((row['preview'] as String? ?? '').trim()),
     };
     if (bySurah.length >= limit) {
       break;
@@ -253,4 +319,11 @@ List<Map<String, Object?>> _reduceSearchRows(Map<String, Object?> payload) {
   }
 
   return bySurah.values.toList(growable: false);
+}
+
+String _trimPreview(String value) {
+  if (value.length <= 70) {
+    return value;
+  }
+  return '${value.substring(0, 70)}...';
 }

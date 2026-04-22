@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
-import 'package:yusr_app/core/widgets/glass_container.dart';
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
 import 'package:yusr_app/features/quran/domain/usecases/quran_use_cases.dart';
 import 'package:yusr_app/features/quran/presentation/models/quran_offline_availability.dart';
@@ -73,8 +72,12 @@ class QuranSurahTab extends StatelessWidget {
             heroTag: heroTag,
           ),
           borderRadius: BorderRadius.circular(16),
-          child: GlassContainer(
-            borderRadius: 16,
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.primaryDark.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.primary),
+            ),
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
