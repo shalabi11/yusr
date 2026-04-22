@@ -5,7 +5,8 @@ const String storagePrayerMigrationFlagKey = 'storage_prayer_migration_v1_done';
 const String cachedPrayerTimesKey = 'cached_prayer_times';
 const String cachedLocationNameKey = 'cached_location_name';
 const String manualLocationEnabledKey = 'manual_location_enabled';
-const String prayerTimesLastRemoteFetchAtKey = 'prayer_times_last_remote_fetch_at';
+const String prayerTimesLastRemoteFetchAtKey =
+    'prayer_times_last_remote_fetch_at';
 
 const String prayerOffsetKey = 'prayer_offset';
 const String playAdhanKey = 'play_adhan';

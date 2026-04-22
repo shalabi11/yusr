@@ -36,9 +36,7 @@ AppBar buildQuranPageAppBar({
           decoration: BoxDecoration(
             color: AppColors.accent.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: AppColors.accent.withValues(alpha: 0.45),
-            ),
+            border: Border.all(color: AppColors.accent.withValues(alpha: 0.45)),
           ),
           child: Text(
             '$heroSurahNumber • $heroSurahName',

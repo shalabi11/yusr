@@ -49,7 +49,9 @@ Future<void> _migrateCorePrayerData({
   required SharedPreferences prefs,
   required Box<dynamic> coreBox,
 }) async {
-  final rawPrayerTimes = _decodeLegacyJsonString(prefs.getString(cachedPrayerTimesKey));
+  final rawPrayerTimes = _decodeLegacyJsonString(
+    prefs.getString(cachedPrayerTimesKey),
+  );
   final prayerRecord = PrayerTimesCacheRecord.fromDynamic(rawPrayerTimes);
   if (prayerRecord != null) {
     await coreBox.put(cachedPrayerTimesKey, prayerRecord);

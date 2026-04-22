@@ -55,7 +55,8 @@ class PrayerTimesCacheRecord {
   }
 }
 
-class PrayerTimesCacheRecordAdapter extends TypeAdapter<PrayerTimesCacheRecord> {
+class PrayerTimesCacheRecordAdapter
+    extends TypeAdapter<PrayerTimesCacheRecord> {
   @override
   final int typeId = 41;
 

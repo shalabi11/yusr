@@ -49,8 +49,7 @@ class IslamicApp extends StatelessWidget {
                     sl<SettingsCubit>()..loadFromRemoteOnStartup(),
               ),
               BlocProvider(
-                create: (context) =>
-                  sl<PrayerTimesCubit>()..fetchPrayerTimes(),
+                create: (context) => sl<PrayerTimesCubit>()..fetchPrayerTimes(),
               ),
               BlocProvider<ContentDownloadCubit>.value(
                 value: sl<ContentDownloadCubit>()..syncInitialState(),

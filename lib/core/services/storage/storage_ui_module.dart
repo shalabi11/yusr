@@ -25,7 +25,8 @@ class StorageUiModule {
     await _prefs.setBool('account_onboarding_seen', seen);
   }
 
-  bool get isContentDownloaded => _prefs.getBool('is_content_downloaded') ?? false;
+  bool get isContentDownloaded =>
+      _prefs.getBool('is_content_downloaded') ?? false;
 
   Future<void> setContentDownloaded(bool downloaded) async {
     await _prefs.setBool('is_content_downloaded', downloaded);
