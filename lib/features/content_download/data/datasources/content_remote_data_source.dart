@@ -18,26 +18,31 @@ class ContentRemoteDataSource {
     final typeValues = _typeValuesForTargets(
       targetTypes,
     ).toList(growable: false);
-    final response = await client
-        .from('files')
-        .select('id, name, type, url, size')
-        .inFilter('type', typeValues)
-        .order('id', ascending: true);
 
-    final rows = (response as List<dynamic>).cast<Map<String, dynamic>>();
-    final files = <DownloadableContentFileModel>[];
-    for (final row in rows) {
-      try {
-        final file = DownloadableContentFileModel.fromMap(row);
-        if (file.name.isNotEmpty && file.url.isNotEmpty) {
-          files.add(file);
+    try {
+      final response = await client
+          .from('files')
+          .select('id, name, type, url, size')
+          .inFilter('type', typeValues)
+          .order('id', ascending: true);
+
+      final rows = List<Map<String, dynamic>>.from(response as List);
+      final files = <DownloadableContentFileModel>[];
+      for (final row in rows) {
+        try {
+          final file = DownloadableContentFileModel.fromMap(row);
+          if (file.name.isNotEmpty && file.url.isNotEmpty) {
+            files.add(file);
+          }
+        } on FormatException {
+          // Ignore unrecognized rows instead of failing the full manifest request.
         }
-      } on FormatException {
-        // Ignore unrecognized rows instead of failing the full manifest request.
       }
-    }
 
-    return files;
+      return files;
+    } catch (e) {
+      throw Exception('Failed to fetch manifest: $e');
+    }
   }
 
   Set<String> _typeValuesForTargets(Set<DownloadContentType> targetTypes) {

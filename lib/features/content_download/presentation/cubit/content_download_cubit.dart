@@ -22,6 +22,9 @@ class ContentDownloadCubit extends Cubit<ContentDownloadState> {
   ) : super(const ContentDownloadState());
 
   static const int _manifestVersion = 1;
+  static const Duration _progressEmitInterval = Duration(milliseconds: 250);
+  static const Duration _notificationInterval = Duration(seconds: 1);
+  static const int _progressDeltaThreshold = 2;
 
   final ContentDownloadRepository _repository;
   final DownloadContentUseCase _downloadContentUseCase;
@@ -35,8 +38,11 @@ class ContentDownloadCubit extends Cubit<ContentDownloadState> {
   bool _pauseRequested = false;
   StreamSubscription<DownloadTaskSnapshot>? _taskSubscription;
   int _lastProgressPercent = -1;
+  DateTime? _lastProgressEmitAt;
   DateTime? _lastSpeedSampleAt;
   int _lastSpeedSampleBytes = 0;
+  DateTime? _lastNotificationAt;
+  int _lastNotifiedPercent = -1;
 
   static const int _maxRetriesPerFile = 3;
 
@@ -125,6 +131,9 @@ class ContentDownloadCubit extends Cubit<ContentDownloadState> {
       _currentTaskId = null;
       _lastSpeedSampleAt = DateTime.now();
       _lastSpeedSampleBytes = downloadedBytes;
+      _lastProgressEmitAt = null;
+      _lastNotificationAt = null;
+      _lastNotifiedPercent = -1;
 
       final totalBytes = sortedManifest.fold<int>(
         0,
@@ -165,7 +174,7 @@ class ContentDownloadCubit extends Cubit<ContentDownloadState> {
           bytesPerSecond: 0,
         ),
       );
-      unawaited(_updatePanelDownloadNotification(paused: false));
+      unawaited(_updatePanelDownloadNotification(paused: false, force: true));
 
       await _downloadRemainingFiles();
     } catch (e) {
@@ -191,7 +200,7 @@ class ContentDownloadCubit extends Cubit<ContentDownloadState> {
       emit(
         state.copyWith(status: ContentDownloadStatus.paused, bytesPerSecond: 0),
       );
-      unawaited(_updatePanelDownloadNotification(paused: true));
+      unawaited(_updatePanelDownloadNotification(paused: true, force: true));
     } catch (e) {
       unawaited(_clearPanelDownloadNotification());
       emit(
@@ -230,7 +239,7 @@ class ContentDownloadCubit extends Cubit<ContentDownloadState> {
           bytesPerSecond: 0,
         ),
       );
-      unawaited(_updatePanelDownloadNotification(paused: false));
+      unawaited(_updatePanelDownloadNotification(paused: false, force: true));
       unawaited(_resumeCurrentFileThenContinue());
     } catch (e) {
       unawaited(_clearPanelDownloadNotification());
@@ -264,7 +273,7 @@ class ContentDownloadCubit extends Cubit<ContentDownloadState> {
           bytesPerSecond: 0,
         ),
       );
-      unawaited(_updatePanelDownloadNotification(paused: false));
+      unawaited(_updatePanelDownloadNotification(paused: false, force: true));
     }
 
     final option = state.selectedOption;
@@ -316,7 +325,7 @@ class ContentDownloadCubit extends Cubit<ContentDownloadState> {
         bytesPerSecond: 0,
       ),
     );
-    unawaited(_updatePanelDownloadNotification(paused: false));
+    unawaited(_updatePanelDownloadNotification(paused: false, force: true));
     await _downloadRemainingFiles();
   }
 
@@ -380,6 +389,7 @@ class ContentDownloadCubit extends Cubit<ContentDownloadState> {
     required bool emitFailureOnTerminalState,
   }) async {
     _lastProgressPercent = -1;
+    _lastProgressEmitAt = null;
     await _taskSubscription?.cancel();
     final completer = Completer<bool>();
 
@@ -395,13 +405,19 @@ class ContentDownloadCubit extends Cubit<ContentDownloadState> {
       }
 
       final progress = snapshot.progress.clamp(0, 100);
+      final now = DateTime.now();
+      final reachedInterval =
+          _lastProgressEmitAt == null ||
+          now.difference(_lastProgressEmitAt!) >= _progressEmitInterval;
       final shouldEmitProgress =
           _lastProgressPercent < 0 ||
-          (progress - _lastProgressPercent).abs() >= 1 ||
-          snapshot.state == DownloadTaskState.complete;
+          (progress - _lastProgressPercent).abs() >= _progressDeltaThreshold ||
+          snapshot.state == DownloadTaskState.complete ||
+          reachedInterval;
 
       if (shouldEmitProgress) {
         _lastProgressPercent = progress;
+        _lastProgressEmitAt = now;
         final inFlightBytes = ((file.size * progress) / 100).round();
         final currentDownloaded = _stableDownloadedBytes + inFlightBytes;
         final speed = _computeSpeedBytesPerSecond(currentDownloaded);
@@ -427,7 +443,7 @@ class ContentDownloadCubit extends Cubit<ContentDownloadState> {
             bytesPerSecond: 0,
           ),
         );
-        unawaited(_updatePanelDownloadNotification(paused: false));
+        unawaited(_updatePanelDownloadNotification(paused: false, force: true));
         await _taskSubscription?.cancel();
         completer.complete(true);
         return;
@@ -506,11 +522,28 @@ class ContentDownloadCubit extends Cubit<ContentDownloadState> {
     return (byteDelta * 1000 / elapsedMs).round();
   }
 
-  Future<void> _updatePanelDownloadNotification({required bool paused}) {
+  Future<void> _updatePanelDownloadNotification({
+    required bool paused,
+    bool force = false,
+  }) {
     final totalBytes = state.totalBytes;
     final percent = totalBytes <= 0
         ? 0
         : ((state.downloadedBytes * 100) / totalBytes).round();
+
+    final now = DateTime.now();
+    final canNotifyByTime =
+        _lastNotificationAt == null ||
+        now.difference(_lastNotificationAt!) >= _notificationInterval;
+    final hasMeaningfulProgress = percent != _lastNotifiedPercent;
+
+    if (!force && !canNotifyByTime && !hasMeaningfulProgress) {
+      return Future<void>.value();
+    }
+
+    _lastNotificationAt = now;
+    _lastNotifiedPercent = percent;
+
     return NotificationService.showContentDownloadProgress(
       progressPercent: percent,
       downloadedBytes: state.downloadedBytes,

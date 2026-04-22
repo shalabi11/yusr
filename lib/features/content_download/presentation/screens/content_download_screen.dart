@@ -75,6 +75,10 @@ class _ContentDownloadViewState extends State<_ContentDownloadView> {
         ),
         child: SafeArea(
           child: BlocBuilder<ContentDownloadCubit, ContentDownloadState>(
+            buildWhen: (previous, current) {
+              return previous.status != current.status ||
+                  previous.errorMessage != current.errorMessage;
+            },
             builder: (context, state) {
               const options = ContentDownloadOption.values;
               _selectedOption ??= _defaultOption(options);
@@ -114,18 +118,7 @@ class _ContentDownloadViewState extends State<_ContentDownloadView> {
                       );
                     }),
                     const SizedBox(height: 16),
-                    if (state.isPreparing ||
-                        state.isDownloading ||
-                        state.isPaused)
-                      ContentProgressWidget(
-                        progress: state.progress,
-                        downloadedBytes: state.downloadedBytes,
-                        totalBytes: state.totalBytes,
-                        remainingBytes: state.remainingBytes,
-                        bytesPerSecond: state.bytesPerSecond,
-                        completedFiles: state.completedFiles,
-                        totalFiles: state.totalFiles,
-                      ),
+                    const _DownloadProgressSection(),
                     if (state.errorMessage != null &&
                         state.errorMessage!.isNotEmpty) ...[
                       const SizedBox(height: 12),
@@ -288,6 +281,41 @@ class _ActionButtons extends StatelessWidget {
         onPressed: hasSelection ? onStart : null,
         child: const Text('بدء التنزيل'),
       ),
+    );
+  }
+}
+
+class _DownloadProgressSection extends StatelessWidget {
+  const _DownloadProgressSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ContentDownloadCubit, ContentDownloadState>(
+      buildWhen: (previous, current) {
+        return previous.status != current.status ||
+            previous.progress != current.progress ||
+            previous.downloadedBytes != current.downloadedBytes ||
+            previous.totalBytes != current.totalBytes ||
+            previous.remainingBytes != current.remainingBytes ||
+            previous.bytesPerSecond != current.bytesPerSecond ||
+            previous.completedFiles != current.completedFiles ||
+            previous.totalFiles != current.totalFiles;
+      },
+      builder: (context, state) {
+        if (!state.isPreparing && !state.isDownloading && !state.isPaused) {
+          return const SizedBox.shrink();
+        }
+
+        return ContentProgressWidget(
+          progress: state.progress,
+          downloadedBytes: state.downloadedBytes,
+          totalBytes: state.totalBytes,
+          remainingBytes: state.remainingBytes,
+          bytesPerSecond: state.bytesPerSecond,
+          completedFiles: state.completedFiles,
+          totalFiles: state.totalFiles,
+        );
+      },
     );
   }
 }
