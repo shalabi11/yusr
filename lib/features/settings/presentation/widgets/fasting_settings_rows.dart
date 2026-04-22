@@ -6,12 +6,14 @@ class FastingSwitchRow extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onChanged,
+    this.enabled = true,
     super.key,
   });
 
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -20,12 +22,17 @@ class FastingSwitchRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(color: AppColors.textWhite, fontSize: 16),
+          style: TextStyle(
+            color: enabled
+                ? AppColors.textWhite
+                : AppColors.textWhite.withValues(alpha: 0.55),
+            fontSize: 16,
+          ),
         ),
         Switch(
           value: value,
           activeThumbColor: AppColors.accent,
-          onChanged: onChanged,
+          onChanged: enabled ? onChanged : null,
         ),
       ],
     );

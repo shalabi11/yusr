@@ -64,28 +64,24 @@ class FastingSettingsCard extends StatelessWidget {
             onChanged: (val) => _updateMainEnabled(context, val),
           ),
           const SizedBox(height: 10),
-          Opacity(
-            opacity: state.fastingRemindersEnabled ? 1 : 0.45,
-            child: IgnorePointer(
-              ignoring: !state.fastingRemindersEnabled,
-              child: Column(
-                children: [
-                  FastingSwitchRow(
-                    label: isArabic
-                        ? 'الأيام البيض (13-14-15)'
-                        : 'White days (13-14-15 Hijri)',
-                    value: state.whiteDaysReminderEnabled,
-                    onChanged: (val) => _updateWhiteDays(context, val),
-                  ),
-                  const SizedBox(height: 8),
-                  FastingSwitchRow(
-                    label: isArabic ? 'الاثنين والخميس' : 'Monday & Thursday',
-                    value: state.mondayThursdayReminderEnabled,
-                    onChanged: (val) => _updateMondayThursday(context, val),
-                  ),
-                ],
+          Column(
+            children: [
+              FastingSwitchRow(
+                label: isArabic
+                    ? 'الأيام البيض (13-14-15)'
+                    : 'White days (13-14-15 Hijri)',
+                value: state.whiteDaysReminderEnabled,
+                onChanged: (val) => _updateWhiteDays(context, val),
+                enabled: state.fastingRemindersEnabled,
               ),
-            ),
+              const SizedBox(height: 8),
+              FastingSwitchRow(
+                label: isArabic ? 'الاثنين والخميس' : 'Monday & Thursday',
+                value: state.mondayThursdayReminderEnabled,
+                onChanged: (val) => _updateMondayThursday(context, val),
+                enabled: state.fastingRemindersEnabled,
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Text(
