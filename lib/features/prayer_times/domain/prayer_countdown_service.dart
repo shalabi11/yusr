@@ -35,6 +35,7 @@ class PrayerCountdownService {
       StreamController<PrayerCountdownTick>.broadcast();
 
   Timer? _ticker;
+  Timer? _alignToMinuteTimer;
   PrayerTimeModel? _prayerTimes;
   PrayerCountdownTick? _current;
 
@@ -43,13 +44,12 @@ class PrayerCountdownService {
 
   void bindPrayerTimes(PrayerTimeModel prayerTimes) {
     _prayerTimes = prayerTimes;
-    _emitTick();
-    _ticker ??= Timer.periodic(const Duration(seconds: 1), (_) {
-      _emitTick();
-    });
+    _scheduleTicker();
   }
 
   void clear() {
+    _alignToMinuteTimer?.cancel();
+    _alignToMinuteTimer = null;
     _ticker?.cancel();
     _ticker = null;
     _prayerTimes = null;
@@ -79,5 +79,31 @@ class PrayerCountdownService {
     }
     _current = tick;
     _controller.add(tick);
+  }
+
+  void _scheduleTicker() {
+    _alignToMinuteTimer?.cancel();
+    _alignToMinuteTimer = null;
+    _ticker?.cancel();
+    _ticker = null;
+
+    _emitTick();
+
+    final now = DateTime.now();
+    final nextMinute = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      now.hour,
+      now.minute + 1,
+    );
+    final delay = nextMinute.difference(now);
+
+    _alignToMinuteTimer = Timer(delay, () {
+      _emitTick();
+      _ticker = Timer.periodic(const Duration(minutes: 1), (_) {
+        _emitTick();
+      });
+    });
   }
 }

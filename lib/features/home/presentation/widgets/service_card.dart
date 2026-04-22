@@ -46,6 +46,7 @@ class ServiceCard extends StatelessWidget {
       },
       borderRadius: BorderRadius.circular(24),
       child: GlassContainer(
+        enableBlur: false,
         borderRadius: 24,
         padding: const EdgeInsets.all(20),
         child: Column(

@@ -7,7 +7,7 @@ class PrayerCountdownText extends StatelessWidget {
   const PrayerCountdownText({
     super.key,
     this.style,
-    this.placeholder = '--:--:--',
+    this.placeholder = '--:--',
   });
 
   final TextStyle? style;

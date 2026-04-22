@@ -74,7 +74,10 @@ class NextPrayerCard extends StatelessWidget {
                 name: viewData.fallbackName,
               )
             : StreamBuilder<PrayerCountdownTick>(
-                stream: countdownService.stream,
+                stream: countdownService.stream.distinct((previous, current) {
+                  return previous.nextPrayerKey == current.nextPrayerKey &&
+                      previous.nextPrayerIcon == current.nextPrayerIcon;
+                }),
                 initialData: countdownService.current,
                 builder: (context, snapshot) {
                   final tick = snapshot.data;
@@ -88,6 +91,7 @@ class NextPrayerCard extends StatelessWidget {
               );
 
         return GlassContainer(
+          enableBlur: false,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

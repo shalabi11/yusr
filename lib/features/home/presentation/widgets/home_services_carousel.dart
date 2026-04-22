@@ -121,12 +121,8 @@ class _HomeServicesCarouselState extends State<HomeServicesCarousel> {
                       : _currentIndex.toDouble();
                   final distance = (position - index).abs();
                   final scale = 1 - (distance * 0.08).clamp(0.0, 0.16);
-                  final opacity = 1 - (distance * 0.25).clamp(0.0, 0.35);
 
-                  return Transform.scale(
-                    scale: scale,
-                    child: Opacity(opacity: opacity, child: child),
-                  );
+                  return Transform.scale(scale: scale, child: child);
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),

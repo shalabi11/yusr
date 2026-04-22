@@ -14,6 +14,7 @@ class NextPrayerSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassContainer(
+      enableBlur: false,
       padding: const EdgeInsets.all(18),
       borderRadius: 20,
       child: Row(

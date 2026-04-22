@@ -3,7 +3,33 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
+class _NoAnimationPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _NoAnimationPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return child;
+  }
+}
+
 class AppTheme {
+  static const _noAnimationTransitions = PageTransitionsTheme(
+    builders: {
+      TargetPlatform.android: _NoAnimationPageTransitionsBuilder(),
+      TargetPlatform.iOS: _NoAnimationPageTransitionsBuilder(),
+      TargetPlatform.linux: _NoAnimationPageTransitionsBuilder(),
+      TargetPlatform.macOS: _NoAnimationPageTransitionsBuilder(),
+      TargetPlatform.windows: _NoAnimationPageTransitionsBuilder(),
+      TargetPlatform.fuchsia: _NoAnimationPageTransitionsBuilder(),
+    },
+  );
+
   static ThemeData get darkTheme {
     const base = ColorScheme.dark(
       primary: AppColors.primary,
@@ -36,6 +62,7 @@ class AppTheme {
         elevation: 0,
         centerTitle: true,
       ),
+      pageTransitionsTheme: _noAnimationTransitions,
     );
   }
 }

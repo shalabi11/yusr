@@ -13,24 +13,15 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen> {
   static const Duration _minimumSplashDuration = Duration(milliseconds: 700);
 
-  late AnimationController _controller;
-  late Animation<double> _animation;
   late final DateTime _startedAt;
 
   @override
   void initState() {
     super.initState();
     _startedAt = DateTime.now();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    );
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
-    _controller.forward();
 
     unawaited(_navigateWhenReady());
   }
@@ -60,7 +51,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
-    _controller.dispose();
     super.dispose();
   }
 
@@ -76,30 +66,24 @@ class _SplashScreenState extends State<SplashScreen>
           ),
         ),
         child: Center(
-          child: FadeTransition(
-            opacity: _animation,
-            child: ScaleTransition(
-              scale: _animation,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.mosque_outlined,
-                    size: 100,
-                    color: AppColors.accent,
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    AppStrings.appName.tr,
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textWhite,
-                    ),
-                  ),
-                ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.mosque_outlined,
+                size: 100,
+                color: AppColors.accent,
               ),
-            ),
+              const SizedBox(height: 20),
+              Text(
+                AppStrings.appName.tr,
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textWhite,
+                ),
+              ),
+            ],
           ),
         ),
       ),
