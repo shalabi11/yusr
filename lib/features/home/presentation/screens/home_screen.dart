@@ -2,34 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/core/widgets/app_radial_background.dart';
+import 'package:yusr_app/features/home/presentation/cubit/home_cubit.dart';
 import 'package:yusr_app/features/home/presentation/widgets/home_header.dart';
 import 'package:yusr_app/features/home/presentation/widgets/daily_content_card.dart';
 import 'package:yusr_app/features/home/presentation/widgets/home_services_carousel.dart';
 import 'package:yusr_app/features/home/presentation/widgets/next_prayer_card.dart';
-import 'package:yusr_app/features/home/domain/usecases/daily_ayah_use_cases.dart';
 import 'package:yusr_app/features/content_download/presentation/widgets/content_download_status_chip.dart';
 import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
 import 'package:yusr_app/core/localization/app_localizations.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({required this.dailyAyahUseCases, super.key});
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
 
-  final DailyAyahUseCases dailyAyahUseCases;
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  Key _dailyContentKey = UniqueKey();
-
-  Future<void> _refreshHome() async {
+  Future<void> _refreshHome(BuildContext context) async {
     await context.read<PrayerTimesCubit>().fetchPrayerTimes(force: true);
-    if (!mounted) return;
-    setState(() {
-      _dailyContentKey = UniqueKey();
-    });
+    if (context.mounted) {
+      context.read<HomeCubit>().refreshDailyContent();
+    }
   }
 
   @override
@@ -68,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: AppRadialBackground(
         child: RefreshIndicator(
-          onRefresh: _refreshHome,
+          onRefresh: () => _refreshHome(context),
           color: AppColors.accent,
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -84,10 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const NextPrayerCard(),
                       const SizedBox(height: 25),
                       const ContentDownloadStatusChip(bottomSpacing: 14),
-                      DailyContentCard(
-                        key: _dailyContentKey,
-                        useCases: widget.dailyAyahUseCases,
-                      ),
+                      const DailyContentCard(),
                       const SizedBox(height: 30),
                       Text(
                         AppStrings.basicServices.tr,

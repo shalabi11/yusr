@@ -1,16 +1,17 @@
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:yusr_app/core/bloc/settings_cubit.dart';
+import 'package:yusr_app/core/sync/sync_orchestrator.dart';
 import 'package:yusr_app/core/services/notification_service.dart';
 import 'package:yusr_app/core/services/storage/istorage_service.dart';
 import 'package:yusr_app/features/ai_assistant/domain/usecases/handle_agent_response_use_case.dart';
 import 'package:yusr_app/features/ai_assistant/domain/usecases/send_message_use_case.dart';
 import 'package:yusr_app/features/ai_assistant/presentation/cubit/chat_cubit.dart';
 import 'package:yusr_app/features/content_download/domain/repositories/content_download_repository.dart';
-import 'package:yusr_app/features/content_download/domain/usecases/download_content_use_case.dart';
-import 'package:yusr_app/features/content_download/domain/usecases/pause_download_use_case.dart';
-import 'package:yusr_app/features/content_download/domain/usecases/resume_download_use_case.dart';
+import 'package:yusr_app/features/content_download/domain/services/download_orchestrator.dart';
 import 'package:yusr_app/features/content_download/presentation/cubit/content_download_cubit.dart';
+import 'package:yusr_app/features/home/domain/usecases/daily_ayah_use_cases.dart';
+import 'package:yusr_app/features/home/presentation/cubit/home_cubit.dart';
 import 'package:yusr_app/features/prayer_times/data/repositories/prayer_times_repository.dart';
 import 'package:yusr_app/features/prayer_times/domain/prayer_countdown_service.dart';
 import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
@@ -18,13 +19,17 @@ import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_c
 void registerCubits(GetIt sl) {
   if (!sl.isRegistered<SettingsCubit>()) {
     sl.registerFactory<SettingsCubit>(
-      () => SettingsCubit(
-        sl<IStorageService>(),
-        sl<INotificationService>(),
-        supabaseClient: sl.isRegistered<SupabaseClient>()
-            ? sl<SupabaseClient>()
-            : null,
-      ),
+      () {
+        final cubit = SettingsCubit(
+          sl<IStorageService>(),
+          sl<INotificationService>(),
+          supabaseClient: sl.isRegistered<SupabaseClient>()
+              ? sl<SupabaseClient>()
+              : null,
+        );
+        sl<SyncOrchestrator>().register(cubit);
+        return cubit;
+      },
     );
   }
 
@@ -48,12 +53,11 @@ void registerCubits(GetIt sl) {
 
   if (!sl.isRegistered<ContentDownloadCubit>()) {
     sl.registerLazySingleton<ContentDownloadCubit>(
-      () => ContentDownloadCubit(
-        sl<ContentDownloadRepository>(),
-        sl<DownloadContentUseCase>(),
-        sl<PauseDownloadUseCase>(),
-        sl<ResumeDownloadUseCase>(),
-      ),
+      () => ContentDownloadCubit(sl<DownloadOrchestrator>(), sl<ContentDownloadRepository>()),
     );
+  }
+
+  if (!sl.isRegistered<HomeCubit>()) {
+    sl.registerFactory<HomeCubit>(() => HomeCubit(sl<DailyAyahUseCases>())..loadDailyContent());
   }
 }

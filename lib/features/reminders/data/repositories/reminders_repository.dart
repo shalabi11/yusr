@@ -1,10 +1,17 @@
+import 'package:yusr_app/core/sync/sync_orchestrator.dart';
 import '../models/reminder_model.dart';
 import '../../../../core/services/storage_service.dart';
 import 'package:yusr_app/core/utils/app_logger.dart';
 import '../datasources/dummy_reminders.dart';
 import 'reminders_remote_sync_service.dart';
 
-class RemindersRepository {
+class RemindersRepository implements ISyncable {
+  @override
+  String get syncId => 'reminders';
+
+  @override
+  Future<void> sync() => loadRemindersOnStartup();
+
   static const String _remindersKey = 'reminders_data';
 
   RemindersRepository({RemindersRemoteSyncService? remoteSync})

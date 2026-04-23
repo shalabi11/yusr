@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/features/content_download/presentation/cubit/content_download_cubit.dart';
 import 'package:yusr_app/features/content_download/presentation/cubit/content_download_state.dart';
+import 'package:yusr_app/features/content_download/presentation/formatters/content_download_formatters.dart';
 
 class ContentDownloadStatusChip extends StatelessWidget {
   const ContentDownloadStatusChip({this.bottomSpacing = 0, super.key});
@@ -31,7 +32,7 @@ class ContentDownloadStatusChip extends StatelessWidget {
         }
 
         final progressPercent = (state.progress * 100).toStringAsFixed(0);
-        final speed = _formatBytes(state.bytesPerSecond);
+        final speed = formatContentBytes(state.bytesPerSecond);
         final subtitle = state.isPaused
             ? 'التنزيل متوقف مؤقتًا. اضغط للاستكمال.'
             : 'اكتمل $progressPercent% • السرعة $speed/ث';
@@ -96,20 +97,5 @@ class ContentDownloadStatusChip extends StatelessWidget {
         );
       },
     );
-  }
-
-  static String _formatBytes(int bytes) {
-    if (bytes <= 0) {
-      return '0 B';
-    }
-
-    const units = <String>['B', 'KB', 'MB', 'GB'];
-    var value = bytes.toDouble();
-    var unitIndex = 0;
-    while (value >= 1024 && unitIndex < units.length - 1) {
-      value /= 1024;
-      unitIndex++;
-    }
-    return '${value.toStringAsFixed(unitIndex == 0 ? 0 : 1)} ${units[unitIndex]}';
   }
 }

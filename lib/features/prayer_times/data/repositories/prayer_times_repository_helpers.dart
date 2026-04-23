@@ -43,17 +43,13 @@ extension PrayerTimesRepositoryHelpers on PrayerTimesRepository {
     );
     if (remoteData == null) return null;
 
-    await _storageService.saveData(
+    await _cacheManager.saveWithTimestamp(
       PrayerTimesRepository._prayerTimesKey,
       remoteData.toJson(),
     );
     await _storageService.saveData(
       PrayerTimesRepository._locationNameKey,
       locationName,
-    );
-    await _storageService.saveData(
-      PrayerTimesRepository._lastRemoteFetchAtKey,
-      DateTime.now().millisecondsSinceEpoch,
     );
 
     return Right(

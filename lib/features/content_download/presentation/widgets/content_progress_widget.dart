@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:yusr_app/core/theme/app_colors.dart';
+import 'package:yusr_app/features/content_download/presentation/formatters/content_download_formatters.dart';
 
 class ContentProgressWidget extends StatelessWidget {
   const ContentProgressWidget({
@@ -52,17 +53,17 @@ class ContentProgressWidget extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            '${(progress * 100).toStringAsFixed(1)}% • ${_formatBytes(downloadedBytes)} / ${_formatBytes(totalBytes)}',
+            '${(progress * 100).toStringAsFixed(1)}% • ${formatContentBytes(downloadedBytes)} / ${formatContentBytes(totalBytes)}',
             style: const TextStyle(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 6),
           Text(
-            'المتبقي: ${_formatBytes(remainingBytes)}',
+            'المتبقي: ${formatContentBytes(remainingBytes)}',
             style: const TextStyle(color: AppColors.textWhite),
           ),
           const SizedBox(height: 6),
           Text(
-            'السرعة: ${_formatBytes(bytesPerSecond)}/ث',
+            'السرعة: ${formatContentBytes(bytesPerSecond)}/ث',
             style: const TextStyle(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 6),
@@ -73,17 +74,5 @@ class ContentProgressWidget extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatBytes(int bytes) {
-    if (bytes <= 0) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB'];
-    var value = bytes.toDouble();
-    var unitIndex = 0;
-    while (value >= 1024 && unitIndex < units.length - 1) {
-      value /= 1024;
-      unitIndex++;
-    }
-    return '${value.toStringAsFixed(unitIndex == 0 ? 0 : 1)} ${units[unitIndex]}';
   }
 }

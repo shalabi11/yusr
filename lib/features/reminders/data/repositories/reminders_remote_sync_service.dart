@@ -1,13 +1,18 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
+import 'package:yusr_app/core/sync/unified_sync_engine.dart';
 
 import '../models/reminder_model.dart';
 import 'reminders_remote_sync_utils.dart';
 
 class RemindersRemoteSyncService {
-  const RemindersRemoteSyncService(this._supabaseClient);
+  RemindersRemoteSyncService(
+    this._supabaseClient, {
+    UnifiedSyncEngine? syncEngine,
+  }) : _syncEngine = syncEngine ?? const UnifiedSyncEngine();
 
   final SupabaseClient? _supabaseClient;
+  final UnifiedSyncEngine _syncEngine;
 
   Future<List<ReminderModel>?> load() async {
     final userId = _supabaseClient?.auth.currentUser?.id;
@@ -36,14 +41,14 @@ class RemindersRemoteSyncService {
 
   Future<void> save(List<ReminderModel> reminders) async {
     final userId = _supabaseClient?.auth.currentUser?.id;
-    if (_supabaseClient == null || userId == null) return;
-
-    await _supabaseClient.from('user_reminders').delete().eq('user_id', userId);
-
-    if (reminders.isEmpty) return;
+    final client = _supabaseClient;
+    if (client == null || userId == null) return;
 
     final rows = reminders.map((r) {
       final isWeeklyFriday = r.subtitleKey == AppStrings.weeklyFriday;
+      final sourceId = r.id.trim().isEmpty
+          ? '${r.titleKey}-${r.hour}-${r.minute}'
+          : r.id;
       return <String, dynamic>{
         'user_id': userId,
         'title': r.titleKey,
@@ -53,10 +58,16 @@ class RemindersRemoteSyncService {
         'time_of_day': toReminderSqlTime(r.hour, r.minute),
         'enabled': r.enabled,
         'icon_code_point': r.iconCodeInfo,
-        'source_id': r.id,
+        'source_id': sourceId,
       };
     }).toList();
 
-    await _supabaseClient.from('user_reminders').insert(rows);
+    await _syncEngine.syncByKeys(
+      client: client,
+      table: 'user_reminders',
+      userId: userId,
+      keyColumns: const <String>['source_id'],
+      desiredRows: rows,
+    );
   }
 }

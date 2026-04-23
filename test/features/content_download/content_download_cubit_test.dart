@@ -6,11 +6,29 @@ import 'package:yusr_app/features/content_download/domain/entities/download_cont
 import 'package:yusr_app/features/content_download/domain/entities/download_task_snapshot.dart';
 import 'package:yusr_app/features/content_download/domain/entities/downloadable_content_file.dart';
 import 'package:yusr_app/features/content_download/domain/repositories/content_download_repository.dart';
+import 'package:yusr_app/features/content_download/domain/services/download_orchestrator.dart';
+import 'package:yusr_app/features/content_download/domain/services/content_download_notifier.dart';
+import 'package:yusr_app/features/content_download/domain/services/download_manifest_service.dart';
+import 'package:yusr_app/features/content_download/domain/services/download_notification_throttler.dart';
+import 'package:yusr_app/features/content_download/domain/services/download_progress_tracker.dart';
+import 'package:yusr_app/features/content_download/domain/services/download_task_runner.dart';
 import 'package:yusr_app/features/content_download/domain/usecases/download_content_use_case.dart';
-import 'package:yusr_app/features/content_download/domain/usecases/pause_download_use_case.dart';
-import 'package:yusr_app/features/content_download/domain/usecases/resume_download_use_case.dart';
 import 'package:yusr_app/features/content_download/presentation/cubit/content_download_cubit.dart';
 import 'package:yusr_app/features/content_download/presentation/cubit/content_download_state.dart';
+
+class _FakeContentDownloadNotifier implements ContentDownloadNotifier {
+  @override
+  Future<void> clearProgress() async {}
+
+  @override
+  Future<void> showProgress({
+    required int progressPercent,
+    required int downloadedBytes,
+    required int totalBytes,
+    required int bytesPerSecond,
+    required bool paused,
+  }) async {}
+}
 
 class FakeContentDownloadRepository implements ContentDownloadRepository {
   final Map<String, StreamController<DownloadTaskSnapshot>> _controllers =
@@ -115,12 +133,14 @@ void main() {
   group('ContentDownloadCubit', () {
     test('completes download from stream snapshots', () async {
       final repo = FakeContentDownloadRepository();
-      final cubit = ContentDownloadCubit(
+      final orchestrator = DownloadOrchestrator(
         repo,
-        DownloadContentUseCase(repo),
-        PauseDownloadUseCase(repo),
-        ResumeDownloadUseCase(repo),
+        DownloadManifestService(DownloadContentUseCase(repo), repo),
+        DownloadTaskRunner(repo),
+        DownloadProgressTracker(),
+        DownloadNotificationThrottler(_FakeContentDownloadNotifier()),
       );
+      final cubit = ContentDownloadCubit(orchestrator, repo);
 
       final future = cubit.startDownload(ContentDownloadOption.quranOnly);
       await Future<void>.delayed(const Duration(milliseconds: 20));
@@ -148,12 +168,14 @@ void main() {
     test('fails download when task stream emits failure', () async {
       final repo = FakeContentDownloadRepository();
       repo.shouldFailTask = true;
-      final cubit = ContentDownloadCubit(
+      final orchestrator = DownloadOrchestrator(
         repo,
-        DownloadContentUseCase(repo),
-        PauseDownloadUseCase(repo),
-        ResumeDownloadUseCase(repo),
+        DownloadManifestService(DownloadContentUseCase(repo), repo),
+        DownloadTaskRunner(repo),
+        DownloadProgressTracker(),
+        DownloadNotificationThrottler(_FakeContentDownloadNotifier()),
       );
+      final cubit = ContentDownloadCubit(orchestrator, repo);
 
       final future = cubit.startDownload(ContentDownloadOption.quranOnly);
       await future;

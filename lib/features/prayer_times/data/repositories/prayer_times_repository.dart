@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:yusr_app/core/error/failures.dart';
 import 'package:yusr_app/core/services/storage/istorage_service.dart';
+import 'package:yusr_app/core/utils/cache_manager.dart';
 import '../../../../core/services/location_service.dart';
 import '../datasources/prayer_times_remote_datasource.dart';
 import '../models/prayer_time_model.dart';
@@ -25,15 +26,17 @@ class PrayerTimesRepository {
   static const String _prayerTimesKey = 'cached_prayer_times';
   static const String _locationNameKey = 'cached_location_name';
   static const String _manualLocationEnabledKey = 'manual_location_enabled';
-  static const String _lastRemoteFetchAtKey =
-      'prayer_times_last_remote_fetch_at';
+
   static const Duration _cacheFreshWindow = Duration(minutes: 30);
 
   PrayerTimesRepository({
     PrayerTimesRemoteDataSource? remoteDataSource,
     required IStorageService storageService,
   }) : _remoteDataSource = remoteDataSource ?? PrayerTimesRemoteDataSource(),
-       _storageService = storageService;
+       _storageService = storageService,
+       _cacheManager = CacheManager(storageService);
+
+  final CacheManager _cacheManager;
 
   Future<Either<Failure, bool>> setManualLocationByCity(String city) async {
     try {
@@ -74,12 +77,9 @@ class PrayerTimesRepository {
     try {
       if (!forceRefresh) {
         final cachedLocationName = getCachedLocationName();
-        final shouldUseCache = _hasFreshRemoteFetch();
-        if (shouldUseCache) {
+        if (_cacheManager.isFresh(_prayerTimesKey, _cacheFreshWindow)) {
           final cached = buildCachedResult(cachedLocationName);
-          if (cached != null) {
-            return cached;
-          }
+          if (cached != null) return cached;
         }
       }
 
@@ -107,39 +107,5 @@ class PrayerTimesRepository {
   String getCachedLocationName() {
     final name = _storageService.getData(_locationNameKey);
     return name?.toString() ?? 'موقع غير معروف';
-  }
-
-  bool _hasFreshRemoteFetch() {
-    final rawLastFetchAt = _storageService.getData(_lastRemoteFetchAtKey);
-    final lastFetchAt = _parseLastFetchAt(rawLastFetchAt);
-    if (lastFetchAt == null) {
-      return false;
-    }
-
-    final hasCachedPrayerTimes = _storageService.getData(_prayerTimesKey);
-    if (hasCachedPrayerTimes == null) {
-      return false;
-    }
-
-    return DateTime.now().difference(lastFetchAt) < _cacheFreshWindow;
-  }
-
-  DateTime? _parseLastFetchAt(dynamic value) {
-    if (value is int) {
-      return DateTime.fromMillisecondsSinceEpoch(value);
-    }
-
-    if (value is double) {
-      return DateTime.fromMillisecondsSinceEpoch(value.toInt());
-    }
-
-    if (value is String) {
-      final millis = int.tryParse(value);
-      if (millis != null) {
-        return DateTime.fromMillisecondsSinceEpoch(millis);
-      }
-    }
-
-    return null;
   }
 }

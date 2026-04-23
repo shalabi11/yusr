@@ -1,9 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:yusr_app/core/services/storage_service.dart';
+import 'package:yusr_app/core/utils/content_file_loader.dart';
 import 'package:yusr_app/features/content_download/domain/entities/download_content_type.dart';
 
 import '../models/adhkar_models.dart';
@@ -19,14 +15,22 @@ class AdhkarRepository {
     'azkar.json',
     'daily_adhkar.json',
   ];
+
   final AdhkarRemoteDataSource? _remoteDataSource;
+
 
   Future<List<AdhkarCategory>> loadCategories() async {
     if (_cache != null) return _cache!;
 
-    final downloaded = await _loadDownloadedCategories();
-    if (downloaded.isNotEmpty) {
-      _cache = downloaded;
+    final result = await ContentFileLoader.loadAndParse<List<AdhkarCategory>>(
+      fileCandidates: _downloadedAdhkarFileCandidates,
+      type: DownloadContentType.adhkar,
+      parser: _parseAdhkarCategories,
+      assetPath: 'assets/data/adhkar.json',
+    );
+
+    if (result != null) {
+      _cache = result;
       return _cache!;
     }
 
@@ -36,69 +40,12 @@ class AdhkarRepository {
       return _cache!;
     }
 
-    return _loadLocalCategories();
+    return const [];
   }
 
   Future<List<AdhkarCategory>> _loadRemoteCategories() async {
     try {
       return await _remoteDataSource?.loadCategories() ?? const [];
-    } catch (_) {
-      return const [];
-    }
-  }
-
-  Future<List<AdhkarCategory>> _loadLocalCategories() async {
-    final raw = await rootBundle.loadString('assets/data/adhkar.json');
-    _cache = await compute(_parseAdhkarCategories, raw);
-    return _cache!;
-  }
-
-  Future<List<AdhkarCategory>> _loadDownloadedCategories() async {
-    if (!StorageService.adhkarContentDownloaded) {
-      return const [];
-    }
-
-    final basePath = StorageService.downloadedContentBasePath;
-    if (basePath == null || basePath.isEmpty) {
-      return const [];
-    }
-
-    final adhkarDir = Directory(
-      '$basePath${Platform.pathSeparator}${DownloadContentType.adhkar.value}',
-    );
-    if (!await adhkarDir.exists()) {
-      return const [];
-    }
-
-    for (final fileName in _downloadedAdhkarFileCandidates) {
-      final parsed = await _parseAdhkarFromFile(
-        File('${adhkarDir.path}${Platform.pathSeparator}$fileName'),
-      );
-      if (parsed.isNotEmpty) {
-        return parsed;
-      }
-    }
-
-    await for (final entity in adhkarDir.list()) {
-      if (entity is! File || !entity.path.toLowerCase().endsWith('.json')) {
-        continue;
-      }
-      final parsed = await _parseAdhkarFromFile(entity);
-      if (parsed.isNotEmpty) {
-        return parsed;
-      }
-    }
-
-    return const [];
-  }
-
-  Future<List<AdhkarCategory>> _parseAdhkarFromFile(File file) async {
-    try {
-      if (!await file.exists()) {
-        return const [];
-      }
-      final raw = await file.readAsString();
-      return compute(_parseAdhkarCategories, raw);
     } catch (_) {
       return const [];
     }

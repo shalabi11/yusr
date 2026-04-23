@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:yusr_app/core/error/failures.dart';
 import 'package:yusr_app/features/home/data/daily_ayah_repository.dart';
 import 'package:yusr_app/features/home/domain/usecases/daily_ayah_use_cases.dart';
+import 'package:yusr_app/features/home/presentation/cubit/home_cubit.dart';
 import 'package:yusr_app/features/home/presentation/screens/home_screen.dart';
 import 'package:yusr_app/features/prayer_times/data/models/prayer_time_model.dart';
 import 'package:yusr_app/features/prayer_times/data/repositories/prayer_times_repository.dart';
@@ -57,20 +58,24 @@ class FakePrayerTimesRepositoryForHome extends PrayerTimesRepository {
 void main() {
   testWidgets('pull-to-refresh triggers prayer times fetch', (tester) async {
     final repo = FakePrayerTimesRepositoryForHome();
-    final cubit = PrayerTimesCubit(
+    final prayerCubit = PrayerTimesCubit(
       repo,
       FakeStorageService(),
       FakeNotificationService(),
       PrayerCountdownService(),
     );
+    final homeCubit = HomeCubit(
+      DailyAyahUseCases(FakeDailyAyahRepository()),
+    );
 
     await tester.pumpWidget(
-      BlocProvider<PrayerTimesCubit>.value(
-        value: cubit,
-        child: MaterialApp(
-          home: HomeScreen(
-            dailyAyahUseCases: DailyAyahUseCases(FakeDailyAyahRepository()),
-          ),
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<PrayerTimesCubit>.value(value: prayerCubit),
+          BlocProvider<HomeCubit>.value(value: homeCubit),
+        ],
+        child: const MaterialApp(
+          home: HomeScreen(),
         ),
       ),
     );
@@ -82,6 +87,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 800));
 
     expect(repo.fetchCount, 1);
-    await cubit.close();
+    await prayerCubit.close();
+    await homeCubit.close();
   });
 }
