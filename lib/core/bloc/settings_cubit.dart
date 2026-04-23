@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:yusr_app/core/services/storage/istorage_service.dart';
+import 'package:yusr_app/core/sync/sync_orchestrator.dart';
 import 'package:yusr_app/core/utils/app_logger.dart';
 
 import '../services/notification_service.dart';
@@ -14,7 +15,8 @@ part 'settings/settings_cubit_storage_sync.dart';
 part 'settings/settings_cubit_mutations.dart';
 
 class SettingsCubit extends Cubit<SettingsState>
-    with SettingsCubitStorageSync, SettingsCubitMutations {
+    with SettingsCubitStorageSync, SettingsCubitMutations
+    implements ISyncable {
   SettingsCubit(
     this._storageService,
     this._notificationService, {
@@ -83,4 +85,10 @@ class SettingsCubit extends Cubit<SettingsState>
       // Keep local settings as source of truth if remote load fails.
     }
   }
+
+  @override
+  String get syncId => 'settings';
+
+  @override
+  Future<void> sync() => loadFromRemoteOnStartup();
 }
