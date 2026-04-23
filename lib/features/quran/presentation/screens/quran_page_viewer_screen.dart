@@ -176,11 +176,11 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
       ..addAll(bookmarks.map((b) => b.pageNumber));
     final lastReadPage = widget.useCases.getLastRead()?.pageNumber;
     if (lastReadPage != null) _savedPages.add(lastReadPage);
-    _loadPageMetaByPage();
-    _loadLocalPageImages();
     _loadRemotePageImages();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      _loadPageMetaByPage();
+      _loadLocalPageImages();
       _precacheAroundPage(_currentPage);
     });
   }
@@ -212,14 +212,15 @@ class _QuranPageViewerScreenState extends State<QuranPageViewerScreen> {
       extendBodyBehindAppBar: true,
       appBar: buildQuranPageAppBar(
         context: context,
-        currentPage: _currentPage,
-        showPageTitle: widget.showPageTitle,
-        entryHeroTag: widget.entryHeroTag,
-        entrySurahNumber: widget.entrySurahNumber,
-        entrySurahName: widget.entrySurahName,
+        // currentPage: _currentPage,
+        // showPageTitle: widget.showPageTitle,
+        // entryHeroTag: widget.entryHeroTag,
+        // entrySurahNumber: widget.entrySurahNumber,
+        // entrySurahName: widget.entrySurahName,
         savedPages: _savedPages,
         onBookmark: _bookmarkCurrentPage,
         onToggleReverse: () => setState(() => _reverse = !_reverse),
+        currentPage: 1,
       ),
       body: Container(
         color: Colors.white,

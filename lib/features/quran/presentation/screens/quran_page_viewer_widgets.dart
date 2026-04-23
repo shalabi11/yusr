@@ -6,54 +6,51 @@ import 'package:yusr_app/core/theme/app_colors.dart';
 AppBar buildQuranPageAppBar({
   required BuildContext context,
   required int currentPage,
-  required bool showPageTitle,
-  required String? entryHeroTag,
-  required int? entrySurahNumber,
-  required String? entrySurahName,
+  // required bool showPageTitle,
+  // required String? entryHeroTag,
+  // required int? entrySurahNumber,
+  // required String? entrySurahName,
   required Set<int> savedPages,
   required VoidCallback onBookmark,
   required VoidCallback onToggleReverse,
 }) {
   final isSaved = savedPages.contains(currentPage);
-  final heroTag = entryHeroTag;
-  final heroSurahNumber = entrySurahNumber;
-  final heroSurahName = entrySurahName;
-  final hasEntryHero =
-      heroTag != null &&
-      heroTag.isNotEmpty &&
-      heroSurahNumber != null &&
-      heroSurahName != null &&
-      heroSurahName.isNotEmpty;
+  // final heroTag = entryHeroTag;
+  // final heroSurahNumber = entrySurahNumber;
+  // final heroSurahName = entrySurahName;
+  // final hasEntryHero =
+  // heroTag != null &&
+  // heroTag.isNotEmpty &&
+  // heroSurahNumber != null &&
+  // heroSurahName != null && heroSurahName.isNotEmpty;
 
-  Widget? title;
-  if (hasEntryHero) {
-    title = Hero(
-      tag: heroTag,
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.accent.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: AppColors.accent.withValues(alpha: 0.45)),
-          ),
-          child: Text(
-            '$heroSurahNumber • $heroSurahName',
-            style: const TextStyle(
-              color: AppColors.primaryDark,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ),
-    );
-  } else if (showPageTitle) {
-    title = Text('الصفحة $currentPage');
-  }
+  // Widget? title;
+  // if (hasEntryHero) {
+  //   title = Material(
+  //     color: Colors.transparent,
+  //     child: Container(
+  //       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+  //       decoration: BoxDecoration(
+  //         color: AppColors.accent.withValues(alpha: 0.14),
+  //         borderRadius: BorderRadius.circular(999),
+  //         border: Border.all(color: AppColors.accent.withValues(alpha: 0.45)),
+  //       ),
+  // child: Text(
+  // '$heroSurahNumber • $heroSurahName',
+  // style: const TextStyle(
+  // color: AppColors.primaryDark,
+  // fontWeight: FontWeight.w700,
+  // ),
+  // ),
+  // ),
+  // );
+  // }
+  // else if (showPageTitle) {
+  // title = Text('الصفحة $currentPage');
+  // }
 
   return AppBar(
-    title: title,
+    // title: title,
     iconTheme: const IconThemeData(color: AppColors.primaryDark),
     actionsIconTheme: const IconThemeData(color: AppColors.primaryDark),
     actions: [

@@ -5,6 +5,9 @@ import 'package:yusr_app/features/quran/presentation/screens/quran_page_viewer_s
 import 'package:yusr_app/features/quran/presentation/screens/quran_reader_screen.dart';
 
 String buildSurahSubtitle(QuranSurah surah, String search, String? preview) {
+  // Search preview logic is temporarily disabled
+  return '${surah.versesCount} آية';
+  /*
   if (search.isEmpty) return '${surah.versesCount} آية';
 
   if (preview == null || preview.isEmpty) {
@@ -15,6 +18,7 @@ String buildSurahSubtitle(QuranSurah surah, String search, String? preview) {
       ? '${preview.substring(0, 45)}...'
       : preview;
   return 'نتيجة آية: $short';
+  */
 }
 
 Future<void> openSurah(

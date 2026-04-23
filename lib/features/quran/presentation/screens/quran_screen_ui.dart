@@ -1,14 +1,24 @@
 part of 'quran_screen.dart';
 
-extension QuranScreenUi on QuranScreenState {
-  Widget buildQuranBody(bool readAsText, {required bool isArabic}) {
-    if (_loading) {
+extension _QuranScreenUi on _QuranScreenState {
+  Widget buildQuranBody(
+    bool readAsText, {
+    required bool isArabic,
+    required QuranState state,
+  }) {
+    final contentDownloaded = StorageService.quranContentDownloaded;
+    final isBlockingLoad =
+        (state.status == QuranStatus.loading ||
+            state.status == QuranStatus.initial) &&
+        !contentDownloaded;
+
+    if (isBlockingLoad) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.accent),
       );
     }
 
-    if (_surahs.isEmpty) {
+    if (state.surahs.isEmpty && !contentDownloaded) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -45,7 +55,7 @@ extension QuranScreenUi on QuranScreenState {
               ),
               const SizedBox(height: 8),
               TextButton(
-                onPressed: loadData,
+                onPressed: () => context.read<QuranCubit>().loadData(),
                 child: const Text('إعادة المحاولة'),
               ),
             ],
@@ -56,54 +66,57 @@ extension QuranScreenUi on QuranScreenState {
 
     return Column(
       children: [
-        /*
-        // TODO: Re-enable search feature in the future once performance is improved.
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: TextField(
-            controller: _searchController,
-            onChanged: _updateSearch,
-            decoration: InputDecoration(
-              hintText: isArabic
-                  ? 'ابحث بكلمة أو موضوع (topic:الصبر)...'
-                  : 'Search by keyword or topic (topic:patience)...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _search.isEmpty
-                  ? null
-                  : IconButton(
-                      onPressed: _clearSearch,
-                      icon: const Icon(Icons.clear),
-                    ),
-            ),
-          ),
-        ),
-        */
+        const SizedBox(height: 0),
         Expanded(
           child: RefreshIndicator(
-            onRefresh: loadData,
+            onRefresh: () async =>
+                context.read<QuranCubit>().refreshCachedState(),
             color: AppColors.accent,
             notificationPredicate: (notification) => notification.depth >= 1,
             child: TabBarView(
               controller: _tabController,
               children: [
                 QuranSurahTab(
-                  surahs: _filteredSurahs,
-                  search: _search,
-                  matchedPreviewBySurah: _matchedPreviewBySurah,
-                  offlineAvailabilityBySurah: _offlineAvailabilityBySurah,
+                  surahs: state.filteredSurahs,
+                  // search: state.searchQuery,
+                  // matchedPreviewBySurah: state.matchedPreviewBySurah,
+                  offlineAvailabilityBySurah: state.offlineAvailabilityBySurah,
                   readAsText: readAsText,
                   isArabic: isArabic,
-                  useCases: widget.useCases,
-                  onReload: loadData,
+                  useCases: context.read<QuranCubit>().useCases,
+                  onReload: () async {
+                    context.read<QuranCubit>().refreshCachedState();
+                  },
                 ),
-                QuranJuzTab(useCases: widget.useCases, onReload: loadData),
-                QuranPagesTab(useCases: widget.useCases),
+                QuranJuzTab(
+                  useCases: context.read<QuranCubit>().useCases,
+                  onReload: () async {
+                    context.read<QuranCubit>().refreshCachedState();
+                  },
+                ),
+                QuranPagesTab(useCases: context.read<QuranCubit>().useCases),
                 QuranKhatmaTab(
-                  lastRead: _lastRead,
+                  lastRead: state.lastRead,
                   daysController: _daysController,
-                  khatmaPlan: _khatmaPlan,
-                  onComputePlan: computeKhatmaPlan,
-                  onScheduleReminder: scheduleKhatmaReminder,
+                  khatmaPlan: state.khatmaPlan,
+                  onComputePlan: () {
+                    final days = int.tryParse(_daysController.text) ?? 30;
+                    context.read<QuranCubit>().computeKhatmaPlan(days);
+                  },
+                  onScheduleReminder: () async {
+                    try {
+                      await context.read<QuranCubit>().scheduleKhatmaReminder();
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('تم جدولة التذكير بنجاح')),
+                      );
+                    } catch (_) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('فشل في جدولة التذكير')),
+                      );
+                    }
+                  },
                 ),
               ],
             ),

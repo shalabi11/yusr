@@ -1,8 +1,8 @@
 part of 'quran_screen.dart';
 
-extension QuranScreenNavigation on QuranScreenState {
-  Future<void> openLastRead(bool readAsText) async {
-    if (_lastRead == null) {
+extension _QuranScreenNavigation on _QuranScreenState {
+  Future<void> openLastRead(bool readAsText, QuranState state) async {
+    if (state.lastRead == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('لا يوجد موضع قراءة محفوظ بعد')),
@@ -11,23 +11,25 @@ extension QuranScreenNavigation on QuranScreenState {
     }
 
     if (readAsText) {
-      if (_surahs.isEmpty) {
+      if (state.surahs.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('بيانات القرآن غير متوفرة بعد')),
         );
         return;
       }
-      final surah = _surahs.firstWhere(
-        (s) => s.number == _lastRead!.surahNumber,
-        orElse: () => _surahs.first,
+      final surah = state.surahs.firstWhere(
+        (s) => s.number == state.lastRead!.surahNumber,
+        orElse: () => state.surahs.first,
       );
       if (!mounted) return;
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              QuranReaderScreen(surah: surah, useCases: widget.useCases),
+          builder: (_) => QuranReaderScreen(
+            surah: surah,
+            useCases: context.read<QuranCubit>().useCases,
+          ),
         ),
       );
     } else {
@@ -36,19 +38,21 @@ extension QuranScreenNavigation on QuranScreenState {
         context,
         MaterialPageRoute(
           builder: (_) => QuranPageViewerScreen(
-            initialPage: _lastRead!.pageNumber,
-            useCases: widget.useCases,
+            initialPage: state.lastRead!.pageNumber,
+            useCases: context.read<QuranCubit>().useCases,
             showPageTitle: false,
           ),
         ),
       );
     }
 
-    await loadData();
+    if (mounted) {
+      context.read<QuranCubit>().refreshCachedState();
+    }
   }
 
-  Future<void> openQuickJumpSheet(bool readAsText) async {
-    if (readAsText && _surahs.isEmpty) {
+  Future<void> openQuickJumpSheet(bool readAsText, QuranState state) async {
+    if (readAsText && state.surahs.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('بيانات القرآن غير متوفرة بعد')),
@@ -62,16 +66,18 @@ extension QuranScreenNavigation on QuranScreenState {
       backgroundColor: Colors.transparent,
       builder: (_) => QuranQuickJumpSheet(
         parentContext: context,
-        surahs: _surahs,
+        surahs: state.surahs,
         readAsText: readAsText,
-        useCases: widget.useCases,
-        onReload: loadData,
+        useCases: context.read<QuranCubit>().useCases,
+        onReload: () async {
+          context.read<QuranCubit>().refreshCachedState();
+        },
       ),
     );
   }
 
-  Future<void> openBookmarksSheet(bool readAsText) async {
-    final bookmarks = widget.useCases.getBookmarks();
+  Future<void> openBookmarksSheet(bool readAsText, QuranState state) async {
+    final bookmarks = context.read<QuranCubit>().useCases.getBookmarks();
     if (bookmarks.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('لا توجد علامات مرجعية محفوظة بعد')),
@@ -86,9 +92,11 @@ extension QuranScreenNavigation on QuranScreenState {
       builder: (_) => QuranBookmarksSheet(
         parentContext: context,
         readAsText: readAsText,
-        useCases: widget.useCases,
-        surahs: _surahs,
-        onReload: loadData,
+        useCases: context.read<QuranCubit>().useCases,
+        surahs: state.surahs,
+        onReload: () async {
+          context.read<QuranCubit>().refreshCachedState();
+        },
       ),
     );
   }

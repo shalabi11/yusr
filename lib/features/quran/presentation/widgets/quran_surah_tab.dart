@@ -9,8 +9,8 @@ import 'quran_surah_tab_helpers.dart';
 class QuranSurahTab extends StatelessWidget {
   const QuranSurahTab({
     required this.surahs,
-    required this.search,
-    required this.matchedPreviewBySurah,
+    // required this.search,
+    // required this.matchedPreviewBySurah,
     required this.offlineAvailabilityBySurah,
     required this.readAsText,
     required this.isArabic,
@@ -20,8 +20,8 @@ class QuranSurahTab extends StatelessWidget {
   });
 
   final List<QuranSurah> surahs;
-  final String search;
-  final Map<int, String> matchedPreviewBySurah;
+  // final String search;
+  // final Map<int, String> matchedPreviewBySurah;
   final Map<int, QuranOfflineAvailability> offlineAvailabilityBySurah;
   final bool readAsText;
   final bool isArabic;
@@ -136,8 +136,8 @@ class QuranSurahTab extends StatelessWidget {
                       Text(
                         buildSurahSubtitle(
                           surah,
-                          search,
-                          matchedPreviewBySurah[surah.number],
+                          '', // search disabled
+                          null, // preview disabled
                         ),
                         style: TextStyle(
                           color: AppColors.textWhite.withValues(alpha: 0.7),

@@ -1,16 +1,44 @@
 import 'package:yusr_app/features/quran/data/models/quran_models.dart';
 import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
-import 'package:yusr_app/features/quran/data/search/quran_smart_search_service.dart';
+// import 'package:yusr_app/features/quran/data/search/quran_search_mapper.dart';
+// import 'package:yusr_app/features/quran/data/search/quran_smart_search_service.dart';
 
 class QuranUseCases {
+  QuranUseCases(this._repository);
+  /*
   QuranUseCases(this._repository, {QuranSmartSearchService? smartSearchService})
     : _smartSearchService = smartSearchService;
+  */
 
   final QuranRepository _repository;
-  final QuranSmartSearchService? _smartSearchService;
+  // final QuranSmartSearchService? _smartSearchService;
 
   Future<List<QuranSurah>> loadSurahs() {
     return _repository.loadSurahs();
+  }
+
+  List<QuranSurah>? peekCachedSurahs() {
+    return _repository.peekCachedSurahs();
+  }
+
+  Map<int, String>? peekCachedLocalPageImagePaths() {
+    return _repository.peekCachedLocalPageImagePaths();
+  }
+
+  Map<int, List<int>>? peekCachedPagesBySurah() {
+    return _repository.peekCachedPagesBySurah();
+  }
+
+  Map<int, List<int>>? peekCachedPagesByJuz() {
+    return _repository.peekCachedPagesByJuz();
+  }
+
+  Map<int, QuranPageMeta>? peekCachedPageMetaByPage() {
+    return _repository.peekCachedPageMetaByPage();
+  }
+
+  Map<int, QuranLastRead>? peekCachedLastReadByPage() {
+    return _repository.peekCachedLastReadByPage();
   }
 
   Future<void> syncProgressOnStartup() {
@@ -65,6 +93,7 @@ class QuranUseCases {
     return _repository.loadLocalPageImagePaths();
   }
 
+  /*
   Future<void> primeSmartSearchIndex(List<QuranSurah> surahs) {
     final service = _smartSearchService;
     if (service == null) {
@@ -85,4 +114,5 @@ class QuranUseCases {
     }
     return service.search(query, limit: limit);
   }
+  */
 }

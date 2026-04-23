@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
+
 import 'package:yusr_app/core/utils/app_logger.dart';
+import 'package:yusr_app/core/sync/sync_orchestrator.dart';
 import 'package:yusr_app/core/services/storage_service.dart';
+import 'package:yusr_app/core/utils/content_file_loader.dart';
 import 'package:yusr_app/features/content_download/domain/entities/download_content_type.dart';
 
 import '../models/quran_models.dart';
@@ -14,7 +16,13 @@ part 'quran_repository_catalog.dart';
 part 'quran_repository_progress.dart';
 part 'quran_repository_startup_sync.dart';
 
-class QuranRepository {
+class QuranRepository implements ISyncable {
+  @override
+  String get syncId => 'quran';
+
+  @override
+  Future<void> sync() => syncProgressOnStartup();
+
   QuranRepository({
     QuranRemoteSyncService? remoteSync,
     QuranCatalogRemoteService? catalogRemote,

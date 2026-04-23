@@ -42,9 +42,15 @@ Future<void> goToSurahJump({
   } else {
     int? initialPage = surah.verses.isEmpty ? null : surah.verses.first.page;
     if (initialPage == null || initialPage < 1 || initialPage > 604) {
-      final pages = await useCases.pagesForSurah(surahNumber);
-      if (!parentContext.mounted || pages.isEmpty) return;
-      initialPage = pages.first;
+      final cachedPagesBySurah = useCases.peekCachedPagesBySurah();
+      final cachedPages = cachedPagesBySurah?[surahNumber];
+      if (cachedPages != null && cachedPages.isNotEmpty) {
+        initialPage = cachedPages.first;
+      } else {
+        final pages = await useCases.pagesForSurah(surahNumber);
+        if (!parentContext.mounted || pages.isEmpty) return;
+        initialPage = pages.first;
+      }
     }
 
     final targetPage = initialPage;

@@ -32,8 +32,8 @@ void main() {
         home: Scaffold(
           body: QuranSurahTab(
             surahs: const <QuranSurah>[surah],
-            search: '',
-            matchedPreviewBySurah: const <int, String>{},
+            // search: '',
+            // matchedPreviewBySurah: const <int, String>{},
             offlineAvailabilityBySurah: const <int, QuranOfflineAvailability>{
               1: QuranOfflineAvailability.full,
             },

@@ -1,11 +1,14 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:yusr_app/core/sync/unified_sync_engine.dart';
 
 import '../models/quran_models.dart';
 
 class QuranRemoteSyncService {
-  const QuranRemoteSyncService(this._supabaseClient);
+  QuranRemoteSyncService(this._supabaseClient, {UnifiedSyncEngine? syncEngine})
+    : _syncEngine = syncEngine ?? const UnifiedSyncEngine();
 
   final SupabaseClient? _supabaseClient;
+  final UnifiedSyncEngine _syncEngine;
 
   Future<QuranLastRead?> loadLastRead() async {
     final userId = _supabaseClient?.auth.currentUser?.id;
@@ -69,14 +72,8 @@ class QuranRemoteSyncService {
 
   Future<void> saveBookmarks(List<QuranBookmark> bookmarks) async {
     final userId = _supabaseClient?.auth.currentUser?.id;
-    if (_supabaseClient == null || userId == null) return;
-
-    await _supabaseClient
-        .from('user_quran_bookmarks')
-        .delete()
-        .eq('user_id', userId);
-
-    if (bookmarks.isEmpty) return;
+    final client = _supabaseClient;
+    if (client == null || userId == null) return;
 
     final rows = bookmarks
         .map(
@@ -91,6 +88,13 @@ class QuranRemoteSyncService {
         )
         .toList();
 
-    await _supabaseClient.from('user_quran_bookmarks').insert(rows);
+    await _syncEngine.syncByKeys(
+      client: client,
+      table: 'user_quran_bookmarks',
+      userId: userId,
+      keyColumns: const <String>['surah_number', 'verse_number', 'page_number'],
+      desiredRows: rows,
+      onConflict: 'user_id,surah_number,verse_number,page_number',
+    );
   }
 }

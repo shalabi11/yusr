@@ -27,7 +27,7 @@ extension _QuranPageViewerOverlay on _QuranPageViewerScreenState {
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.amiri(
                         color: AppColors.primaryDark,
-                        fontSize: 22,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -36,6 +36,7 @@ extension _QuranPageViewerOverlay on _QuranPageViewerScreenState {
                   Text(
                     'الجزء $juzLabel',
                     style: const TextStyle(
+                      fontSize: 12,
                       color: AppColors.primaryDark,
                       fontWeight: FontWeight.w700,
                     ),
@@ -45,13 +46,13 @@ extension _QuranPageViewerOverlay on _QuranPageViewerScreenState {
             ),
           ),
           Positioned(
-            bottom: 14,
+            bottom: 10,
             left: 0,
             right: 0,
             child: Center(
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
+                  horizontal: 10,
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(

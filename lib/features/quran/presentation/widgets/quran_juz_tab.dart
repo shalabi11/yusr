@@ -26,7 +26,9 @@ class QuranJuzTab extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 10),
           child: InkWell(
             onTap: () async {
-              final pages = await useCases.pagesForJuz(juz);
+              final cachedPagesByJuz = useCases.peekCachedPagesByJuz();
+              final cachedPages = cachedPagesByJuz?[juz];
+              final pages = cachedPages ?? await useCases.pagesForJuz(juz);
               if (!context.mounted || pages.isEmpty) return;
               await Navigator.push(
                 context,

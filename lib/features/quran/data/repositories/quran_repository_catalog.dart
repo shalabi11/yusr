@@ -35,9 +35,14 @@ extension QuranRepositoryCatalog on QuranRepository {
       return QuranRepository._cachedSurahs!;
     }
 
-    final downloaded = await _loadSurahsFromDownloadedFile();
-    if (downloaded.isNotEmpty) {
-      QuranRepository._cachedSurahs = downloaded;
+    final result = await ContentFileLoader.loadAndParse<List<QuranSurah>>(
+      fileCandidates: QuranRepository._downloadedQuranFileCandidates,
+      type: DownloadContentType.quran,
+      parser: _parseQuranSurahs,
+    );
+
+    if (result != null) {
+      QuranRepository._cachedSurahs = result;
       return QuranRepository._cachedSurahs!;
     }
 
@@ -70,46 +75,6 @@ extension QuranRepositoryCatalog on QuranRepository {
       );
       return const [];
     }
-  }
-
-  Future<List<QuranSurah>> _loadSurahsFromDownloadedFile() async {
-    if (!StorageService.quranContentDownloaded) {
-      return const [];
-    }
-
-    final basePath = StorageService.downloadedContentBasePath;
-    if (basePath == null || basePath.isEmpty) {
-      return const [];
-    }
-
-    final quranDir = Directory(
-      '$basePath${Platform.pathSeparator}${DownloadContentType.quran.value}',
-    );
-    if (!await quranDir.exists()) {
-      return const [];
-    }
-
-    for (final fileName in QuranRepository._downloadedQuranFileCandidates) {
-      final candidate = File(
-        '${quranDir.path}${Platform.pathSeparator}$fileName',
-      );
-      final parsed = await _parseSurahsFromFile(candidate);
-      if (parsed.isNotEmpty) {
-        return parsed;
-      }
-    }
-
-    await for (final entity in quranDir.list()) {
-      if (entity is! File || !entity.path.toLowerCase().endsWith('.json')) {
-        continue;
-      }
-      final parsed = await _parseSurahsFromFile(entity);
-      if (parsed.isNotEmpty) {
-        return parsed;
-      }
-    }
-
-    return const [];
   }
 
   Future<Map<int, String>> loadLocalPageImagePaths() async {
@@ -163,23 +128,28 @@ extension QuranRepositoryCatalog on QuranRepository {
     return QuranRepository._cachedLocalPageImagePaths!;
   }
 
-  Future<List<QuranSurah>> _parseSurahsFromFile(File file) async {
-    try {
-      if (!await file.exists()) {
-        return const [];
-      }
-      final raw = await file.readAsString();
-      return compute(_parseQuranSurahs, raw);
-    } catch (error) {
-      AppLogger.warning(
-        'quran',
-        'parseSurahsFromFile',
-        'Failed to parse local surah file, skipping file.',
-        error: error,
-        payloadId: file.path,
-      );
-      return const [];
-    }
+  List<QuranSurah>? peekCachedSurahs() {
+    return QuranRepository._cachedSurahs;
+  }
+
+  Map<int, String>? peekCachedLocalPageImagePaths() {
+    return QuranRepository._cachedLocalPageImagePaths;
+  }
+
+  Map<int, List<int>>? peekCachedPagesByJuz() {
+    return QuranRepository._cachedPagesByJuz;
+  }
+
+  Map<int, List<int>>? peekCachedPagesBySurah() {
+    return QuranRepository._cachedPagesBySurah;
+  }
+
+  Map<int, QuranPageMeta>? peekCachedPageMetaByPage() {
+    return QuranRepository._cachedPageMetaByPage;
+  }
+
+  Map<int, QuranLastRead>? peekCachedLastReadByPage() {
+    return QuranRepository._cachedLastReadByPage;
   }
 
   Future<void> _ensureIndexes() async {
@@ -249,6 +219,33 @@ extension QuranRepositoryCatalog on QuranRepository {
   Future<QuranLastRead?> getLastReadForPage(int page) async {
     await _ensureIndexes();
     return QuranRepository._cachedLastReadByPage?[page];
+  }
+
+  /// Primes the static caches for the Quran catalog (surahs and local images).
+  /// This should be called during app startup to ensure the Quran screen
+  /// loads instantly when the user opens it.
+  Future<void> primeCatalog() async {
+    try {
+      // Load surahs into cache
+      await loadSurahs();
+      // Load local image paths into cache
+      await loadLocalPageImagePaths();
+      // Pre-calculate indexes
+      await _ensureIndexes();
+
+      AppLogger.info(
+        'quran',
+        'primeCatalog',
+        'Quran catalog primed successfully.',
+      );
+    } catch (error) {
+      AppLogger.warning(
+        'quran',
+        'primeCatalog',
+        'Failed to prime Quran catalog in background.',
+        error: error,
+      );
+    }
   }
 
   KhatmaPlan calculateKhatmaPlan(int days) {
