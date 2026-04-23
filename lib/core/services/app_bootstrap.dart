@@ -8,19 +8,40 @@ import 'package:yusr_app/core/utils/app_logger.dart';
 import 'package:yusr_app/core/services/notification_service.dart';
 import 'package:yusr_app/core/services/storage/storage_hive_bootstrap.dart';
 import 'package:yusr_app/core/services/supabase/supabase_bootstrap.dart';
+import 'package:yusr_app/core/sync/sync_orchestrator.dart';
+import 'package:yusr_app/features/quran/data/repositories/quran_repository.dart';
 import 'package:yusr_app/features/reminders/data/repositories/reminders_repository.dart';
 import 'package:yusr_app/injection_container.dart';
 
 enum AppBootstrapStatus { idle, running, ready, failed }
+
+typedef SharedPreferencesLoader = Future<SharedPreferences> Function();
+typedef StorageHiveInitializer = Future<void> Function(SharedPreferences prefs);
+typedef SupabaseInitializer = Future<void> Function();
+typedef DependenciesInitializer =
+    Future<void> Function({required SharedPreferences sharedPreferences});
 
 class AppBootstrap {
   AppBootstrap._();
 
   static final AppBootstrap instance = AppBootstrap._();
 
+  @visibleForTesting
+  static SharedPreferencesLoader sharedPreferencesLoader =
+      SharedPreferences.getInstance;
+
+  @visibleForTesting
+  static StorageHiveInitializer storageHiveInitializer = initializeStorageHive;
+
+  @visibleForTesting
+  static SupabaseInitializer supabaseInitializer = SupabaseBootstrap.init;
+
+  @visibleForTesting
+  static DependenciesInitializer dependenciesInitializer = initDependencies;
+
   final ValueNotifier<AppBootstrapStatus> status =
       ValueNotifier<AppBootstrapStatus>(AppBootstrapStatus.idle);
-  final Completer<void> _readyCompleter = Completer<void>();
+  Completer<void> _readyCompleter = Completer<void>();
   Future<void>? _deferredInitFuture;
 
   Object? _error;
@@ -28,6 +49,22 @@ class AppBootstrap {
   Future<void> get ready => _readyCompleter.future;
 
   Object? get error => _error;
+
+  @visibleForTesting
+  void resetForTesting() {
+    status.value = AppBootstrapStatus.idle;
+    _error = null;
+    _deferredInitFuture = null;
+    _readyCompleter = Completer<void>();
+  }
+
+  @visibleForTesting
+  static void resetTestHooks() {
+    sharedPreferencesLoader = SharedPreferences.getInstance;
+    storageHiveInitializer = initializeStorageHive;
+    supabaseInitializer = SupabaseBootstrap.init;
+    dependenciesInitializer = initDependencies;
+  }
 
   Future<void> start() async {
     if (status.value == AppBootstrapStatus.running ||
@@ -38,15 +75,15 @@ class AppBootstrap {
     status.value = AppBootstrapStatus.running;
 
     try {
-      final sharedPrefsFuture = SharedPreferences.getInstance();
+      final sharedPrefsFuture = sharedPreferencesLoader();
 
       await Future.wait<void>(<Future<void>>[
-        sharedPrefsFuture.then<void>(initializeStorageHive),
-        SupabaseBootstrap.init(),
+        sharedPrefsFuture.then<void>(storageHiveInitializer),
+        supabaseInitializer(),
       ]);
 
       final sharedPreferences = await sharedPrefsFuture;
-      await initDependencies(sharedPreferences: sharedPreferences);
+      await dependenciesInitializer(sharedPreferences: sharedPreferences);
 
       // Tune cache defaults for image-heavy screens like Quran page viewer.
       final imageCache = PaintingBinding.instance.imageCache;
@@ -124,6 +161,11 @@ class AppBootstrap {
         );
         // Reminder sync should not block app usability.
       }
+
+      // Pre-load Quran catalog in background so it opens instantly later.
+      unawaited(sl<QuranRepository>().primeCatalog());
+
+      unawaited(sl<SyncOrchestrator>().syncAll());
     } catch (error, stackTrace) {
       AppLogger.warning(
         'bootstrap',
