@@ -9,9 +9,11 @@ import 'package:yusr_app/features/content_download/domain/entities/content_downl
 import 'package:yusr_app/features/content_download/presentation/screens/content_download_required_screen.dart';
 import 'package:yusr_app/features/splash/splash_screen.dart';
 import 'package:yusr_app/features/intro/presentation/intro_screen.dart';
+import 'package:yusr_app/features/home/presentation/cubit/home_cubit.dart';
 import 'package:yusr_app/features/home/presentation/screens/home_screen.dart';
 import 'package:yusr_app/features/onboarding/presentation/screens/account_onboarding_screen.dart';
 import 'package:yusr_app/features/prayer_times/presentation/screens/prayer_times_screen.dart';
+import 'package:yusr_app/features/quran/presentation/cubit/quran_cubit.dart';
 import 'package:yusr_app/features/quran/presentation/screens/quran_screen.dart';
 import 'package:yusr_app/features/reminders/presentation/screens/reminders_screen.dart';
 import 'package:yusr_app/features/settings/presentation/screens/settings_screen.dart';
@@ -28,7 +30,10 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const IntroScreen());
       case '/home':
         return MaterialPageRoute(
-          builder: (_) => HomeScreen(dailyAyahUseCases: sl()),
+          builder: (_) => BlocProvider(
+            create: (_) => sl<HomeCubit>(),
+            child: const HomeScreen(),
+          ),
         );
       case '/onboarding-auth':
         return MaterialPageRoute(
@@ -53,7 +58,12 @@ class AppRouter {
             ),
           );
         }
-        return MaterialPageRoute(builder: (_) => QuranScreen(useCases: sl()));
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => QuranCubit(useCases: sl()),
+            child: const QuranScreen(),
+          ),
+        );
       case '/adhkar':
         if (!StorageService.adhkarContentDownloaded) {
           return MaterialPageRoute(

@@ -6,6 +6,8 @@ import 'package:yusr_app/core/services/notification_service.dart';
 import 'package:yusr_app/core/services/storage/istorage_service.dart';
 import 'package:yusr_app/core/services/storage/storage_sevice_impl.dart';
 import 'package:yusr_app/core/services/supabase/supabase_bootstrap.dart';
+import 'package:yusr_app/core/sync/sync_orchestrator.dart';
+import 'package:yusr_app/core/sync/unified_sync_engine.dart';
 
 void registerCoreServices(GetIt sl, SharedPreferences prefs) {
   if (!sl.isRegistered<IStorageService>()) {
@@ -28,5 +30,11 @@ void registerCoreServices(GetIt sl, SharedPreferences prefs) {
         ),
       ),
     );
+  }
+  if (!sl.isRegistered<SyncOrchestrator>()) {
+    sl.registerLazySingleton<SyncOrchestrator>(SyncOrchestrator.new);
+  }
+  if (!sl.isRegistered<UnifiedSyncEngine>()) {
+    sl.registerLazySingleton<UnifiedSyncEngine>(UnifiedSyncEngine.new);
   }
 }
