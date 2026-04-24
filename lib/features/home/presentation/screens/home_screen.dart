@@ -5,7 +5,7 @@ import 'package:yusr_app/core/widgets/app_radial_background.dart';
 import 'package:yusr_app/features/home/presentation/cubit/home_cubit.dart';
 import 'package:yusr_app/features/home/presentation/widgets/home_header.dart';
 import 'package:yusr_app/features/home/presentation/widgets/daily_content_card.dart';
-import 'package:yusr_app/features/home/presentation/widgets/home_services_carousel.dart';
+import 'package:yusr_app/features/home/presentation/widgets/home_services_carousel_simplified.dart';
 import 'package:yusr_app/features/home/presentation/widgets/next_prayer_card.dart';
 import 'package:yusr_app/features/content_download/presentation/widgets/content_download_status_chip.dart';
 import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_cubit.dart';
@@ -90,7 +90,10 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               SliverToBoxAdapter(
-                child: HomeServicesCarousel(services: services),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: HomeServicesGrid(services: services),
+                ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 120)),
             ],
