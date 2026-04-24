@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../prayer_times/domain/entities/next_prayer_info.dart';
+import '../../../prayer_times/domain/prayer_schedule_models.dart';
 import '../../../prayer_times/presentation/cubit/prayer_times_cubit.dart';
 import '../../../prayer_times/presentation/widgets/next_prayer_summary_card.dart';
 import '../../../prayer_times/presentation/widgets/prayer_card_shell.dart';
@@ -13,35 +13,15 @@ class NextPrayerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<PrayerTimesCubit, dynamic, NextPrayerInfo?>(
-      selector: _selectNextPrayerInfo,
-      builder: (context, nextPrayerInfo) {
-        if (nextPrayerInfo == null) {
+    return BlocBuilder<PrayerTimesCubit, PrayerTimesState>(
+      builder: (context, state) {
+        if (state is! PrayerTimesLoaded) {
           return _buildLoadingCard(context);
         }
 
-        return NextPrayerSummaryCard(nextPrayerInfo: nextPrayerInfo);
+        return const NextPrayerSummaryCard();
       },
     );
-  }
-
-  NextPrayerInfo? _selectNextPrayerInfo(dynamic state) {
-    final candidates = <dynamic>[
-      _tryRead(() => state.nextPrayerInfo),
-      _tryRead(() => state.nextPrayer),
-      _tryRead(() => state.currentPrayerInfo),
-      _tryRead(() => state.currentPrayer),
-      _tryRead(() => state.info),
-      _tryRead(() => state.prayerInfo),
-    ];
-
-    for (final candidate in candidates) {
-      if (candidate is NextPrayerInfo) {
-        return candidate;
-      }
-    }
-
-    return null;
   }
 
   T? _tryRead<T>(T Function() getter) {
