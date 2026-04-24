@@ -1,14 +1,11 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:yusr_app/core/sync/unified_sync_engine.dart';
 
 import '../models/quran_models.dart';
 
 class QuranRemoteSyncService {
-  QuranRemoteSyncService(this._supabaseClient, {UnifiedSyncEngine? syncEngine})
-    : _syncEngine = syncEngine ?? const UnifiedSyncEngine();
+  QuranRemoteSyncService(this._supabaseClient);
 
   final SupabaseClient? _supabaseClient;
-  final UnifiedSyncEngine _syncEngine;
 
   Future<QuranLastRead?> loadLastRead() async {
     final userId = _supabaseClient?.auth.currentUser?.id;
@@ -71,30 +68,29 @@ class QuranRemoteSyncService {
   }
 
   Future<void> saveBookmarks(List<QuranBookmark> bookmarks) async {
-    final userId = _supabaseClient?.auth.currentUser?.id;
     final client = _supabaseClient;
+    final userId = client?.auth.currentUser?.id;
     if (client == null || userId == null) return;
+
+    await client.from('user_quran_bookmarks').delete().eq('user_id', userId);
+
+    if (bookmarks.isEmpty) {
+      return;
+    }
 
     final rows = bookmarks
         .map(
-          (b) => {
+          (bookmark) => {
             'user_id': userId,
-            'surah_number': b.surahNumber,
-            'verse_number': b.verseNumber,
-            'page_number': b.pageNumber,
-            'juz_number': b.juzNumber,
-            'created_at': b.createdAt.toIso8601String(),
+            'surah_number': bookmark.surahNumber,
+            'verse_number': bookmark.verseNumber,
+            'page_number': bookmark.pageNumber,
+            'juz_number': bookmark.juzNumber,
+            'created_at': bookmark.createdAt.toIso8601String(),
           },
         )
-        .toList();
+        .toList(growable: false);
 
-    await _syncEngine.syncByKeys(
-      client: client,
-      table: 'user_quran_bookmarks',
-      userId: userId,
-      keyColumns: const <String>['surah_number', 'verse_number', 'page_number'],
-      desiredRows: rows,
-      onConflict: 'user_id,surah_number,verse_number,page_number',
-    );
+    await client.from('user_quran_bookmarks').insert(rows);
   }
 }

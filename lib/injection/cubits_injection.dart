@@ -1,7 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:yusr_app/core/bloc/settings_cubit.dart';
-import 'package:yusr_app/core/sync/sync_orchestrator.dart';
 import 'package:yusr_app/core/services/notification_service.dart';
 import 'package:yusr_app/core/services/storage/istorage_service.dart';
 import 'package:yusr_app/features/ai_assistant/domain/usecases/handle_agent_response_use_case.dart';
@@ -19,17 +18,13 @@ import 'package:yusr_app/features/prayer_times/presentation/cubit/prayer_times_c
 void registerCubits(GetIt sl) {
   if (!sl.isRegistered<SettingsCubit>()) {
     sl.registerFactory<SettingsCubit>(
-      () {
-        final cubit = SettingsCubit(
-          sl<IStorageService>(),
-          sl<INotificationService>(),
-          supabaseClient: sl.isRegistered<SupabaseClient>()
-              ? sl<SupabaseClient>()
-              : null,
-        );
-        sl<SyncOrchestrator>().register(cubit);
-        return cubit;
-      },
+      () => SettingsCubit(
+        sl<IStorageService>(),
+        sl<INotificationService>(),
+        supabaseClient: sl.isRegistered<SupabaseClient>()
+            ? sl<SupabaseClient>()
+            : null,
+      ),
     );
   }
 
@@ -53,11 +48,14 @@ void registerCubits(GetIt sl) {
 
   if (!sl.isRegistered<ContentDownloadCubit>()) {
     sl.registerLazySingleton<ContentDownloadCubit>(
-      () => ContentDownloadCubit(sl<DownloadOrchestrator>(), sl<ContentDownloadRepository>()),
+      () => ContentDownloadCubit(
+        sl<DownloadOrchestrator>(),
+        sl<ContentDownloadRepository>(),
+      ),
     );
   }
 
   if (!sl.isRegistered<HomeCubit>()) {
-    sl.registerFactory<HomeCubit>(() => HomeCubit(sl<DailyAyahUseCases>())..loadDailyContent());
+    sl.registerFactory<HomeCubit>(() => HomeCubit(sl<DailyAyahUseCases>()));
   }
 }

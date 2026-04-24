@@ -1,50 +1,61 @@
-import 'package:yusr_app/features/auth/data/datasources/auth_remote_data_source.dart';
-import 'package:yusr_app/features/auth/data/models/auth_user_model.dart';
 import 'dart:typed_data';
-import 'package:yusr_app/features/auth/domain/entities/auth_user_entity.dart';
+
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:yusr_app/features/auth/domain/entities/sign_up_result.dart';
-import 'package:yusr_app/features/auth/domain/repositories/auth_repository.dart';
+
+import '../../domain/repositories/auth_repository.dart';
+import '../datasources/auth_remote_data_source.dart';
+import '../datasources/user_profile_remote_data_source.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  const AuthRepositoryImpl(this._remoteDataSource);
+  AuthRepositoryImpl(
+    this._authRemoteDataSource,
+    this._userProfileRemoteDataSource,
+  );
 
-  final AuthRemoteDataSource _remoteDataSource;
+  final AuthRemoteDataSource _authRemoteDataSource;
+  final UserProfileRemoteDataSource _userProfileRemoteDataSource;
 
   @override
   Future<void> signInWithEmail({
     required String email,
     required String password,
-  }) {
-    return _remoteDataSource.signInWithEmail(email: email, password: password);
+  }) async {
+    await _authRemoteDataSource.signInWithEmail(
+      email: email,
+      password: password,
+    );
   }
 
   @override
   Future<SignUpResult> signUpWithEmail({
-    required String username,
     required String email,
     required String password,
+    required String username,
   }) async {
-    final response = await _remoteDataSource.signUpWithEmail(
-      username: username,
+    final response = await _authRemoteDataSource.signUpWithEmail(
       email: email,
       password: password,
+      username: username,
     );
 
-    if (response.session == null) {
-      return SignUpResult.emailConfirmationRequired;
-    }
-
-    return SignUpResult.signedIn;
+    return SignUpResult(
+      user: response.user,
+      needsEmailConfirmation: response.session == null,
+    );
   }
 
   @override
   Future<void> signOut() {
-    return _remoteDataSource.signOut();
+    return _authRemoteDataSource.signOut();
   }
 
   @override
+  User? getCurrentUser() => _authRemoteDataSource.getCurrentUser();
+
+  @override
   Future<void> updateUsername({required String username}) {
-    return _remoteDataSource.updateUsername(username: username);
+    return _userProfileRemoteDataSource.updateUsername(username: username);
   }
 
   @override
@@ -52,18 +63,9 @@ class AuthRepositoryImpl implements AuthRepository {
     required Uint8List bytes,
     required String fileExtension,
   }) {
-    return _remoteDataSource.updateAvatar(
+    return _userProfileRemoteDataSource.updateAvatar(
       bytes: bytes,
       fileExtension: fileExtension,
     );
-  }
-
-  @override
-  AuthUserEntity? getCurrentUser() {
-    final user = _remoteDataSource.getCurrentUser();
-    if (user == null) {
-      return null;
-    }
-    return AuthUserModel.fromSupabaseUser(user);
   }
 }

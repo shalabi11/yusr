@@ -1,18 +1,13 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:yusr_app/core/localization/app_translations.dart';
-import 'package:yusr_app/core/sync/unified_sync_engine.dart';
 
 import '../models/reminder_model.dart';
 import 'reminders_remote_sync_utils.dart';
 
 class RemindersRemoteSyncService {
-  RemindersRemoteSyncService(
-    this._supabaseClient, {
-    UnifiedSyncEngine? syncEngine,
-  }) : _syncEngine = syncEngine ?? const UnifiedSyncEngine();
+  RemindersRemoteSyncService(this._supabaseClient);
 
   final SupabaseClient? _supabaseClient;
-  final UnifiedSyncEngine _syncEngine;
 
   Future<List<ReminderModel>?> load() async {
     final userId = _supabaseClient?.auth.currentUser?.id;
@@ -40,34 +35,40 @@ class RemindersRemoteSyncService {
   }
 
   Future<void> save(List<ReminderModel> reminders) async {
-    final userId = _supabaseClient?.auth.currentUser?.id;
     final client = _supabaseClient;
-    if (client == null || userId == null) return;
+    final userId = client?.auth.currentUser?.id;
+    if (client == null || userId == null) {
+      return;
+    }
 
-    final rows = reminders.map((r) {
-      final isWeeklyFriday = r.subtitleKey == AppStrings.weeklyFriday;
-      final sourceId = r.id.trim().isEmpty
-          ? '${r.titleKey}-${r.hour}-${r.minute}'
-          : r.id;
-      return <String, dynamic>{
-        'user_id': userId,
-        'title': r.titleKey,
-        'subtitle': r.subtitleKey,
-        'frequency': isWeeklyFriday ? 'weekly_friday' : 'daily',
-        'weekday': isWeeklyFriday ? DateTime.friday : null,
-        'time_of_day': toReminderSqlTime(r.hour, r.minute),
-        'enabled': r.enabled,
-        'icon_code_point': r.iconCodeInfo,
-        'source_id': sourceId,
-      };
-    }).toList();
+    await client.from('user_reminders').delete().eq('user_id', userId);
 
-    await _syncEngine.syncByKeys(
-      client: client,
-      table: 'user_reminders',
-      userId: userId,
-      keyColumns: const <String>['source_id'],
-      desiredRows: rows,
-    );
+    if (reminders.isEmpty) {
+      return;
+    }
+
+    final rows = reminders
+        .map((reminder) {
+          final isWeeklyFriday =
+              reminder.subtitleKey == AppStrings.weeklyFriday;
+          final sourceId = reminder.id.trim().isEmpty
+              ? '${reminder.titleKey}-${reminder.hour}-${reminder.minute}'
+              : reminder.id;
+
+          return <String, dynamic>{
+            'user_id': userId,
+            'title': reminder.titleKey,
+            'subtitle': reminder.subtitleKey,
+            'frequency': isWeeklyFriday ? 'weekly_friday' : 'daily',
+            'weekday': isWeeklyFriday ? DateTime.friday : null,
+            'time_of_day': toReminderSqlTime(reminder.hour, reminder.minute),
+            'enabled': reminder.enabled,
+            'icon_code_point': reminder.iconCodeInfo,
+            'source_id': sourceId,
+          };
+        })
+        .toList(growable: false);
+
+    await client.from('user_reminders').insert(rows);
   }
 }

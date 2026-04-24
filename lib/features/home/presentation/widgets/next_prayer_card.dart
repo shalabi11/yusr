@@ -1,110 +1,83 @@
+// ignore_for_file: avoid_dynamic_calls
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:yusr_app/core/localization/app_localizations.dart';
-import 'package:yusr_app/features/prayer_times/domain/prayer_countdown_service.dart';
-import '../../../../core/widgets/glass_container.dart';
+
+import '../../../prayer_times/domain/entities/next_prayer_info.dart';
 import '../../../prayer_times/presentation/cubit/prayer_times_cubit.dart';
-import 'next_prayer_card_sections.dart';
-
-class _NextPrayerCardViewData {
-  const _NextPrayerCardViewData({
-    required this.fallbackName,
-    required this.fallbackIcon,
-    required this.isLoading,
-    this.locationName,
-  });
-
-  final String fallbackName;
-  final IconData fallbackIcon;
-  final bool isLoading;
-  final String? locationName;
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-
-    return other is _NextPrayerCardViewData &&
-        other.fallbackName == fallbackName &&
-        other.fallbackIcon == fallbackIcon &&
-        other.isLoading == isLoading &&
-        other.locationName == locationName;
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(fallbackName, fallbackIcon, isLoading, locationName);
-}
+import '../../../prayer_times/presentation/widgets/next_prayer_summary_card.dart';
+import '../../../prayer_times/presentation/widgets/prayer_card_shell.dart';
 
 class NextPrayerCard extends StatelessWidget {
   const NextPrayerCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<
-      PrayerTimesCubit,
-      PrayerTimesState,
-      _NextPrayerCardViewData
-    >(
-      selector: (state) {
-        final loaded = state is PrayerTimesLoaded ? state : null;
-        return _NextPrayerCardViewData(
-          fallbackName: loaded == null
-              ? 'جاري الحساب...'
-              : loaded.nextPrayerKey.tr,
-          fallbackIcon: loaded?.nextPrayerIcon ?? Icons.access_time,
-          isLoading: state is PrayerTimesLoading,
-          locationName: loaded?.locationName,
-        );
-      },
-      builder: (context, viewData) {
-        PrayerCountdownService? countdownService;
-        try {
-          countdownService = RepositoryProvider.of<PrayerCountdownService>(
-            context,
-          );
-        } catch (_) {
-          countdownService = null;
+    return BlocSelector<PrayerTimesCubit, dynamic, NextPrayerInfo?>(
+      selector: _selectNextPrayerInfo,
+      builder: (context, nextPrayerInfo) {
+        if (nextPrayerInfo == null) {
+          return _buildLoadingCard(context);
         }
 
-        final leftSection = countdownService == null
-            ? NextPrayerLeftSection(
-                icon: viewData.fallbackIcon,
-                name: viewData.fallbackName,
-              )
-            : StreamBuilder<PrayerCountdownTick>(
-                stream: countdownService.stream.distinct((previous, current) {
-                  return previous.nextPrayerKey == current.nextPrayerKey &&
-                      previous.nextPrayerIcon == current.nextPrayerIcon;
-                }),
-                initialData: countdownService.current,
-                builder: (context, snapshot) {
-                  final tick = snapshot.data;
-                  return NextPrayerLeftSection(
-                    icon: tick?.nextPrayerIcon ?? viewData.fallbackIcon,
-                    name: tick == null
-                        ? viewData.fallbackName
-                        : tick.nextPrayerKey.tr,
-                  );
-                },
-              );
-
-        return GlassContainer(
-          enableBlur: false,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              leftSection,
-              NextPrayerRightSection(
-                isLoading: viewData.isLoading,
-                locationName: viewData.locationName,
-              ),
-            ],
-          ),
-        );
+        return NextPrayerSummaryCard(nextPrayerInfo: nextPrayerInfo);
       },
+    );
+  }
+
+  NextPrayerInfo? _selectNextPrayerInfo(dynamic state) {
+    final candidates = <dynamic>[
+      _tryRead(() => state.nextPrayerInfo),
+      _tryRead(() => state.nextPrayer),
+      _tryRead(() => state.currentPrayerInfo),
+      _tryRead(() => state.currentPrayer),
+      _tryRead(() => state.info),
+      _tryRead(() => state.prayerInfo),
+    ];
+
+    for (final candidate in candidates) {
+      if (candidate is NextPrayerInfo) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  T? _tryRead<T>(T Function() getter) {
+    try {
+      return getter();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Widget _buildLoadingCard(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return PrayerCardShell(
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'الصلاة القادمة',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
