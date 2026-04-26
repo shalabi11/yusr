@@ -42,7 +42,7 @@ class PrayerTimesLoadedView extends StatelessWidget {
             isFromCache: state.isFromCache,
           ),
           const SizedBox(height: 16),
-          NextPrayerSummaryCard(next: next),
+          const NextPrayerSummaryCard(),
           const SizedBox(height: 16),
           ...prayers.map((slot) {
             final isNext = slot.id == next.slot.id;
