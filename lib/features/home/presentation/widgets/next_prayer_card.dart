@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../prayer_times/domain/prayer_schedule_models.dart';
 import '../../../prayer_times/presentation/cubit/prayer_times_cubit.dart';
 import '../../../prayer_times/presentation/widgets/next_prayer_summary_card.dart';
 import '../../../prayer_times/presentation/widgets/prayer_card_shell.dart';

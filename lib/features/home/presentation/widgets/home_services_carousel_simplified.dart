@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:yusr_app/core/theme/app_colors.dart';
 import 'package:yusr_app/features/home/presentation/widgets/service_card.dart';
 
 class ServiceItem {
@@ -16,7 +15,7 @@ class ServiceItem {
 
 /// Simplified Services Grid Widget
 /// Replaces the complex infinite carousel with a clean, performant grid layout.
-/// 
+///
 /// **Why this is better:**
 /// - Eliminates unnecessary complexity (200k virtual items, timer-based scrolling)
 /// - Reduces memory footprint significantly
@@ -38,6 +37,7 @@ class HomeServicesGrid extends StatelessWidget {
     // This is simpler, more performant, and more maintainable than infinite carousel
     return GridView.builder(
       shrinkWrap: true,
+
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -74,26 +74,23 @@ class HomeServicesCarouselSimplified extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: List.generate(
-          services.length,
-          (index) {
-            final item = services[index];
-            return Padding(
-              padding: EdgeInsets.only(
-                left: index == 0 ? 16 : 8,
-                right: index == services.length - 1 ? 16 : 8,
+        children: List.generate(services.length, (index) {
+          final item = services[index];
+          return Padding(
+            padding: EdgeInsets.only(
+              left: index == 0 ? 16 : 8,
+              right: index == services.length - 1 ? 16 : 8,
+            ),
+            child: SizedBox(
+              width: 160,
+              child: ServiceCard(
+                title: item.title,
+                icon: item.icon,
+                route: item.route,
               ),
-              child: SizedBox(
-                width: 160,
-                child: ServiceCard(
-                  title: item.title,
-                  icon: item.icon,
-                  route: item.route,
-                ),
-              ),
-            );
-          },
-        ),
+            ),
+          );
+        }),
       ),
     );
   }
