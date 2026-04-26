@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:yusr_app/features/auth/data/models/auth_user_model.dart';
+import 'package:yusr_app/features/auth/domain/entities/auth_user_entity.dart';
 import 'package:yusr_app/features/auth/domain/entities/sign_up_result.dart';
 
 import '../../domain/repositories/auth_repository.dart';
@@ -39,10 +40,9 @@ class AuthRepositoryImpl implements AuthRepository {
       username: username,
     );
 
-    return SignUpResult(
-      user: response.user,
-      needsEmailConfirmation: response.session == null,
-    );
+    return response.session == null
+        ? SignUpResult.emailConfirmationRequired
+        : SignUpResult.signedIn;
   }
 
   @override
@@ -51,7 +51,12 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  User? getCurrentUser() => _authRemoteDataSource.getCurrentUser();
+  AuthUserEntity? getCurrentUser() {
+    final currentUser = _authRemoteDataSource.getCurrentUser();
+    if (currentUser == null) return null;
+
+    return AuthUserModel.fromSupabaseUser(currentUser);
+  }
 
   @override
   Future<void> updateUsername({required String username}) {
